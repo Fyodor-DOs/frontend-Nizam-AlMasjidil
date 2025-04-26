@@ -6,30 +6,15 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 const Dashboard = () => {
-  const [keuangan, setKeuangan] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
-    if (token) {
-      setAuthToken(token);
-
-      const fetchData = async () => {
-        try {
-          const response = await api.get('/keuangan');
-          setKeuangan(response.data);
-        } catch (err: any) {
-          console.error('Fetch Error:', err);
-          setError(err?.response?.data?.message || 'Failed to fetch data');
-          router.push('/login');
-        }
-      };
-
-      fetchData();
-    } else {
-      // Kalau tidak ada token, langsung redirect
+    if (!token) {
       router.push('/login');
+    } else {
+      setAuthToken(token);
     }
   }, [router]);
 
@@ -40,30 +25,20 @@ const Dashboard = () => {
 
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
-        {/* Tombol navigasi ke halaman Donasi */}
-        <div className="flex justify-center mb-6">
+        <div className="flex flex-col items-center space-y-4 mb-6">
+          {/* Tombol ke Halaman Donasi */}
           <Link href="/donasi">
             <button className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded">
-              Ke Halaman Donasi
+              Donasi
             </button>
           </Link>
-        </div>
 
-        {/* Data Keuangan */}
-        <div className="space-y-4">
-          {keuangan.length > 0 ? (
-            keuangan.map((item) => (
-              <div
-                key={item.id}
-                className="p-4 border border-gray-200 rounded-lg shadow-sm"
-              >
-                <p className="font-semibold">{item.keterangan}</p>
-                <p className="text-gray-600">Rp {item.jumlah.toLocaleString('id-ID')}</p>
-              </div>
-            ))
-          ) : (
-            <p className="text-center text-gray-500">Belum ada data keuangan.</p>
-          )}
+          {/* Tombol ke Halaman Keuangan */}
+          <Link href="/keuangan">
+            <button className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded">
+              Keuangan
+            </button>
+          </Link>
         </div>
       </div>
     </div>

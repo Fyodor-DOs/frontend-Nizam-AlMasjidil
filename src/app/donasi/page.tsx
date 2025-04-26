@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import api, { setAuthToken } from '@/utils/api';
 import { useRouter } from 'next/navigation';
+import api, { setAuthToken } from '@/utils/api';
 
 const Donasi = () => {
   const [formData, setFormData] = useState({
@@ -18,7 +18,6 @@ const Donasi = () => {
     if (token) {
       setAuthToken(token);
     } else {
-      // Kalau tidak ada token, redirect ke login
       router.push('/login');
     }
   }, [router]);
@@ -44,29 +43,38 @@ const Donasi = () => {
       setSuccessMessage('Donasi berhasil dikirim!');
       setFormData({ jumlah: '', metode_pembayaran: '' });
 
-      // Optional: redirect ke dashboard
-      // router.push('/dashboard');
+      // Redirect ke dashboard setelah 1,5 detik
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 1500);
     } catch (err: any) {
-        console.error('Donasi Error:', err);
+      console.error('Donasi Error:', err);
 
-        if (err.response) {
-            console.error('Error Message:', err.response.data.message);
-            console.error('Error Details:', err.response.data.error); // <=== ini tambah untuk cek detailnya
-            console.error('Error Trace:', err.response.data.trace);   // <=== ini untuk trace nya
-            setError(err?.response?.data?.message || 'Gagal mengirim donasi');
-        } else if (err.request) {
-            console.error('Donasi Request Error:', err.request);
-            setError('No response received from server.');
-        } else {
-            setError('Error saat mengirim permintaan.');
-        }
+      if (err.response) {
+        setError(err?.response?.data?.message || 'Gagal mengirim donasi');
+      } else if (err.request) {
+        setError('No response received from server.');
+      } else {
+        setError('Error saat mengirim permintaan.');
+      }
     }
+  };
 
+  const handleBack = () => {
+    router.push('/dashboard');
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white text-black">
       <div className="w-full max-w-md p-8 border border-gray-300 shadow-lg rounded-lg">
+        {/* Tombol Kembali ke Dashboard */}
+        <button
+          onClick={handleBack}
+          className="text-blue-500 hover:text-blue-700 mb-4"
+        >
+          Kembali ke Dashboard
+        </button>
+
         <h1 className="text-2xl font-bold mb-6 text-center">Form Donasi</h1>
 
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
