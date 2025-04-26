@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -50,7 +51,24 @@ export default function Home() {
             Read our docs
           </a>
         </div>
+
+        {/* Tambahkan tombol login dan register */}
+        <div className="flex gap-4 mt-8 sm:flex-row flex-col">
+          <Link
+            href="/login"
+            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-blue-500 text-white gap-2 hover:bg-blue-600 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
+          >
+            Login
+          </Link>
+          <Link
+            href="/register"
+            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-green-500 text-white gap-2 hover:bg-green-600 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
+          >
+            Register
+          </Link>
+        </div>
       </main>
+
       <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
         <a
           className="flex items-center gap-2 hover:underline hover:underline-offset-4"
