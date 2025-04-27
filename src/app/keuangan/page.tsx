@@ -13,17 +13,22 @@ const KeuanganPage = () => {
   const [jumlah, setJumlah] = useState('');
   const [tanggal, setTanggal] = useState('');
   const [totalSaldo, setTotalSaldo] = useState<number>(0);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
+    const role = localStorage.getItem('role');
+  
     if (!token) {
       router.push('/login');
     } else {
       setAuthToken(token);
+      setUserRole(role);
       fetchKeuangan();
     }
   }, [router]);
+  
 
   const fetchKeuangan = async () => {
     try {
@@ -93,12 +98,14 @@ const KeuanganPage = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-center w-full">Histori Keuangan</h1>
-          <button
-            onClick={() => setShowModal(true)}
-            className="absolute top-8 right-8 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
-          >
-            Buat Pengeluaran
-          </button>
+            {(userRole === 'admin' || userRole === 'takmir') && (
+              <button
+                onClick={() => setShowModal(true)}
+                className="absolute top-8 right-8 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
+              >
+                Buat Pengeluaran
+              </button>
+            )}
         </div>
 
         {/* Total Saldo */}
