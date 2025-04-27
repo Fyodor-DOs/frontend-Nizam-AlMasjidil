@@ -24,12 +24,16 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     try {
       const response = await api.post('/login', formData);
       const token = response.data.token;
+      const role = response.data.user.role;
+  
       setAuthToken(token);
       localStorage.setItem('authToken', token);
+      localStorage.setItem('role', role);
+  
       router.push('/dashboard');
     } catch (err: any) {
       if (err.response) {

@@ -6,17 +6,30 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 const Dashboard = () => {
+  const [role, setRole] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
-    if (!token) {
+    const userRole = localStorage.getItem('role'); 
+
+    if (!token || !userRole) {
       router.push('/login');
     } else {
       setAuthToken(token);
+      setRole(userRole);
     }
   }, [router]);
+
+  const handleLogout = () => {
+    // Menghapus token dan role dari localStorage
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('role');
+    
+    // Redirect ke halaman login
+    router.push('/login');
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white text-black">
@@ -26,19 +39,34 @@ const Dashboard = () => {
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
         <div className="flex flex-col items-center space-y-4 mb-6">
-          {/* Tombol ke Halaman Donasi */}
           <Link href="/donasi">
             <button className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded">
               Donasi
             </button>
           </Link>
 
-          {/* Tombol ke Halaman Keuangan */}
-          <Link href="/keuangan">
-            <button className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded">
-              Keuangan
-            </button>
-          </Link>
+          {(role === 'admin' || role === 'takmir') && (
+            <Link href="/keuangan">
+              <button className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded">
+                Keuangan
+              </button>
+            </Link>
+          )}
+
+          {role === 'admin' && (
+            <Link href="/users">
+              <button className="px-6 py-2 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded">
+                Kelola User
+              </button>
+            </Link>
+          )}
+
+          <button
+            onClick={handleLogout}
+            className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white font-semibold rounded"
+          >
+            Logout
+          </button>
         </div>
       </div>
     </div>
