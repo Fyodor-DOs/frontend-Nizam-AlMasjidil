@@ -83,15 +83,12 @@ const UserManagementPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-white text-black">
       <div className="w-full max-w-5xl p-8 border border-gray-300 shadow-lg rounded-lg">
-        {/* Tombol Kembali */}
         <button
           onClick={handleBack}
           className="text-blue-500 hover:text-blue-700 mb-4"
         >
           Kembali ke Dashboard
         </button>
-
-        {/* Header dan Tambah User */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">Kelola User</h1>
           <button
@@ -105,8 +102,6 @@ const UserManagementPage = () => {
         {error && (
           <div className="text-red-500 text-center mb-4">{error}</div>
         )}
-
-        {/* Table User */}
         <div className="overflow-x-auto">
           <table className="w-full border border-gray-300">
             <thead className="bg-gray-100">
@@ -146,8 +141,6 @@ const UserManagementPage = () => {
             </tbody>
           </table>
         </div>
-
-        {/* Modal Tambah User */}
         {showModal && (
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center">
             <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">

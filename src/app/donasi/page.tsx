@@ -42,8 +42,6 @@ const Donasi = () => {
 
       setSuccessMessage('Donasi berhasil dikirim!');
       setFormData({ jumlah: '', metode_pembayaran: '' });
-
-      // Redirect ke dashboard setelah 1,5 detik
       setTimeout(() => {
         router.push('/dashboard');
       }, 1500);
@@ -67,7 +65,6 @@ const Donasi = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-white text-black">
       <div className="w-full max-w-md p-8 border border-gray-300 shadow-lg rounded-lg">
-        {/* Tombol Kembali ke Dashboard */}
         <button
           onClick={handleBack}
           className="text-blue-500 hover:text-blue-700 mb-4"

@@ -42,14 +42,12 @@ const Dashboard = () => {
             </button>
           </Link>
 
-          {/* Semua user sekarang bisa lihat tombol Keuangan */}
           <Link href="/keuangan">
             <button className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded">
               Keuangan
             </button>
           </Link>
 
-          {/* Kelola User tetap hanya admin */}
           {role === 'admin' && (
             <Link href="/users">
               <button className="px-6 py-2 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded">

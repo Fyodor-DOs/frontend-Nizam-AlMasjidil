@@ -76,8 +76,6 @@ const KeuanganDetailPage = () => {
             </p>
           </div>
         </div>
-
-        {/* Tombol kembali ke halaman keuangan */}
         <div className="mt-6">
           <Link href="/keuangan">
             <button className="w-full p-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded">

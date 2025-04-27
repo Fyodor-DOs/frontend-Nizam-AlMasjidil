@@ -66,13 +66,13 @@ const KeuanganPage = () => {
         keterangan,
         jumlah: parseFloat(jumlah),
         tanggal,
-        tipe_keuangan_id: 2, // 2 untuk Pengeluaran
+        tipe_keuangan_id: 2, 
       });
       setShowModal(false);
       setKeterangan('');
       setJumlah('');
       setTanggal('');
-      fetchKeuangan(); // Refresh data setelah tambah
+      fetchKeuangan(); 
     } catch (err) {
       console.error('Error tambah pengeluaran:', err);
       alert('Gagal menambah pengeluaran');
@@ -86,16 +86,12 @@ const KeuanganPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-white text-black">
       <div className="w-full max-w-2xl p-8 border border-gray-300 shadow-lg rounded-lg relative">
-        
-        {/* Tombol Kembali */}
         <button
           onClick={handleBack}
           className="text-blue-500 hover:text-blue-700 mb-4"
         >
           Kembali ke Dashboard
         </button>
-
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-center w-full">Histori Keuangan</h1>
             {(userRole === 'admin' || userRole === 'takmir') && (
@@ -107,19 +103,15 @@ const KeuanganPage = () => {
               </button>
             )}
         </div>
-
-        {/* Total Saldo */}
         <div className="text-center mb-6">
           <h2 className="text-xl font-semibold">Total Saldo</h2>
           <p className={`text-2xl font-bold ${totalSaldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             Rp {totalSaldo.toLocaleString('id-ID')}
           </p>
         </div>
-
-        {/* Error */}
+        
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
-        {/* List Keuangan */}
         <div className="space-y-4">
           {keuangan.length > 0 ? (
             keuangan.map((item) => (
@@ -144,7 +136,6 @@ const KeuanganPage = () => {
           )}
         </div>
 
-        {/* Modal Buat Pengeluaran */}
         {showModal && (
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
