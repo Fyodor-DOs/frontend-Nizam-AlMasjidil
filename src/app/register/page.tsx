@@ -33,18 +33,18 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white text-black">
-      <div className="w-full max-w-md p-8 border border-gray-300 shadow-lg rounded-lg">
-        <h1 className="text-2xl font-bold mb-6 text-center">Register</h1>
+    <div className="min-h-screen flex items-center justify-center bg-[#1A1614] text-white px-4">
+      <div className="w-full max-w-md bg-[#0D0D0D] p-8 rounded-2xl shadow-lg">
+        <h1 className="text-3xl font-bold mb-6 text-center">Register</h1>
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <input
             type="text"
             name="nama"
             placeholder="Nama Lengkap"
             value={formData.nama}
             onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="w-full p-3 rounded-lg bg-[#1A1614] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400"
             required
           />
           <input
@@ -53,7 +53,7 @@ const Register = () => {
             placeholder="Email"
             value={formData.email}
             onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="w-full p-3 rounded-lg bg-[#1A1614] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400"
             required
           />
           <input
@@ -62,21 +62,20 @@ const Register = () => {
             placeholder="Password"
             value={formData.password}
             onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="w-full p-3 rounded-lg bg-[#1A1614] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400"
             required
           />
           <button
             type="submit"
-            className="w-full p-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded"
+            className="w-full py-3 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold rounded-lg transition"
           >
             Register
           </button>
         </form>
 
-        {}
-        <p className="mt-6 text-center text-sm">
+        <p className="mt-6 text-center text-sm text-gray-400">
           Sudah punya akun?{' '}
-          <Link href="/login" className="text-blue-500 hover:underline">
+          <Link href="/login" className="text-yellow-400 hover:underline">
             Login di sini
           </Link>
         </p>
