@@ -42,72 +42,87 @@ const Donasi = () => {
 
       setSuccessMessage('Donasi berhasil dikirim!');
       setFormData({ jumlah: '', metode_pembayaran: '' });
+
       setTimeout(() => {
         router.push('/dashboard');
       }, 1500);
     } catch (err: any) {
       console.error('Donasi Error:', err);
-
       if (err.response) {
         setError(err?.response?.data?.message || 'Gagal mengirim donasi');
       } else if (err.request) {
-        setError('No response received from server.');
+        setError('Server tidak merespons.');
       } else {
-        setError('Error saat mengirim permintaan.');
+        setError('Terjadi kesalahan.');
       }
     }
   };
 
-  const handleBack = () => {
-    router.push('/dashboard');
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white text-black">
-      <div className="w-full max-w-md p-8 border border-gray-300 shadow-lg rounded-lg">
-        <button
-          onClick={handleBack}
-          className="text-blue-500 hover:text-blue-700 mb-4"
-        >
-          Kembali ke Dashboard
-        </button>
+    <div className="min-h-screen bg-[#1A1614] flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="bg-yellow-400 text-black py-4 px-6 text-center font-bold text-lg">
+          Formulir Donasi
+        </div>
 
-        <h1 className="text-2xl font-bold mb-6 text-center">Form Donasi</h1>
+        <div className="p-8 bg-white">
+          {error && (
+            <p className="mb-4 p-3 text-sm text-red-600 bg-red-100 rounded">
+              {error}
+            </p>
+          )}
 
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-        {successMessage && <p className="text-green-500 text-center mb-4">{successMessage}</p>}
+          {successMessage && (
+            <p className="mb-4 p-3 text-sm text-green-700 bg-green-100 rounded">
+              {successMessage}
+            </p>
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="number"
-            name="jumlah"
-            placeholder="Jumlah Donasi (Rp)"
-            value={formData.jumlah}
-            onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-            required
-          />
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block mb-1 font-semibold text-gray-700">Jumlah Donasi (Rp)</label>
+              <input
+                type="number"
+                name="jumlah"
+                value={formData.jumlah}
+                onChange={handleChange}
+                placeholder="Contoh: 50000"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                required
+              />
+            </div>
 
-          <select
-            name="metode_pembayaran"
-            value={formData.metode_pembayaran}
-            onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-            required
-          >
-            <option value="">Pilih Metode Pembayaran</option>
-            <option value="transfer">Transfer</option>
-            <option value="tunai">Tunai</option>
-            <option value="e-wallet">E-Wallet</option>
-          </select>
+            <div>
+              <label className="block mb-1 font-semibold text-gray-700">Metode Pembayaran</label>
+              <select
+                name="metode_pembayaran"
+                value={formData.metode_pembayaran}
+                onChange={handleChange}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                required
+              >
+                <option value="">Pilih metode</option>
+                <option value="transfer">Transfer</option>
+                <option value="tunai">Tunai</option>
+                <option value="e-wallet">E-Wallet</option>
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold py-3 rounded-lg transition"
+            >
+              Donasi Sekarang
+            </button>
+          </form>
 
           <button
-            type="submit"
-            className="w-full p-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded"
+            onClick={() => router.push('/dashboard')}
+            className="mt-6 text-sm text-yellow-600 hover:underline block text-center"
           >
-            Donasi Sekarang
+            ← Kembali ke Dashboard
           </button>
-        </form>
+        </div>
       </div>
     </div>
   );
