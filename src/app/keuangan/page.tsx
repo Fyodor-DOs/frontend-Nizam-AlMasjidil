@@ -85,24 +85,34 @@ const KeuanganPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white text-black">
-      <div className="w-full max-w-2xl p-8 border border-gray-300 shadow-lg rounded-lg relative">
+      <div className="w-full max-w-5xl p-8 border border-gray-300 shadow-lg rounded-lg relative">
         <button
           onClick={handleBack}
           className="text-blue-500 hover:text-blue-700 mb-4"
         >
           Kembali ke Dashboard
         </button>
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 relative">
           <h1 className="text-2xl font-bold text-center w-full">Histori Keuangan</h1>
-            {(userRole === 'admin' || userRole === 'takmir') && (
+
+          {(userRole === 'admin' || userRole === 'takmir') && (
+            <div className="absolute top-0 right-0 flex space-x-2">
               <button
                 onClick={() => setShowModal(true)}
-                className="absolute top-8 right-8 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
+                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
               >
                 Buat Pengeluaran
               </button>
-            )}
+              <button
+                onClick={() => router.push('/laporan-keuangan')}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+              >
+                Laporan Keuangan
+              </button>
+            </div>
+          )}
         </div>
+
         <div className="text-center mb-6">
           <h2 className="text-xl font-semibold">Total Saldo</h2>
           <p className={`text-2xl font-bold ${totalSaldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
