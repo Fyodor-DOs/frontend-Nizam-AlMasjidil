@@ -36,6 +36,7 @@ const Dashboard = () => {
         <nav className="space-x-4 text-sm md:text-base">
           <Link href="/donasi" className="hover:text-yellow-400">Donasi</Link>
           <Link href="/keuangan" className="hover:text-green-400">Keuangan</Link>
+          <Link href="/kegiatan" className="hover:text-blue-400">Kegiatan</Link>
           {role === 'admin' && (
             <Link href="/users" className="hover:text-purple-400">Kelola User</Link>
           )}
