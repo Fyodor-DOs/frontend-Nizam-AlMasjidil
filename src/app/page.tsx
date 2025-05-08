@@ -6,6 +6,27 @@ import Link from 'next/link';
 export default function Home() {
   return (
     <div className="bg-[#1A1614] text-white font-sans">
+      {/* Header transparan */}
+      <header className="absolute top-0 left-0 w-full z-20">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+          <Link href="/" className="text-xl font-bold text-white">
+            AlMasjid Digital
+          </Link>
+          <nav className="space-x-6 hidden md:flex">
+            <Link href="#kelas" className="text-gray-200 hover:text-yellow-400">Kelas</Link>
+            <Link href="#kajian" className="text-gray-200 hover:text-yellow-400">Kajian</Link>
+            <Link href="#komunitas" className="text-gray-200 hover:text-yellow-400">Komunitas</Link>
+            <Link href="/login" className="bg-yellow-400 text-black px-4 py-2 rounded-full hover:bg-yellow-300 font-medium">
+              Masuk
+            </Link>
+          </nav>
+          {/* Tombol login mobile */}
+          <Link href="/login" className="md:hidden text-sm bg-yellow-400 text-black px-3 py-1 rounded-full">
+            Masuk
+          </Link>
+        </div>
+      </header>
+
       {/* Hero Section */}
       <section
         className="relative h-[90vh] bg-cover bg-no-repeat flex items-center justify-center text-center px-4"
@@ -15,11 +36,11 @@ export default function Home() {
           backgroundSize: 'cover',
         }}
       >
-        {/* Gradasi Overlay */}
+        {/* Overlay Gradasi */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-[#1A1614]"></div>
 
-        {/* Content */}
-        <div className="relative z-10 max-w-3xl">
+        {/* Konten Hero */}
+        <div className="relative z-10 max-w-3xl pt-20">
           <h3 className="text-sm uppercase tracking-widest text-gray-300 mb-2">
             A Digital Masjid
           </h3>
@@ -43,6 +64,7 @@ export default function Home() {
         {[1, 2, 3].map((num) => (
           <div
             key={num}
+            id={num === 1 ? 'kelas' : num === 2 ? 'kajian' : 'komunitas'}
             className={`grid md:grid-cols-2 gap-8 items-center ${
               num % 2 === 0 ? 'md:flex-row-reverse' : ''
             }`}

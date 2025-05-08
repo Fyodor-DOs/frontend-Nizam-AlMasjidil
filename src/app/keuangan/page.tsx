@@ -19,7 +19,7 @@ const KeuanganPage = () => {
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     const role = localStorage.getItem('role');
-  
+
     if (!token) {
       router.push('/login');
     } else {
@@ -28,7 +28,6 @@ const KeuanganPage = () => {
       fetchKeuangan();
     }
   }, [router]);
-  
 
   const fetchKeuangan = async () => {
     try {
@@ -43,16 +42,16 @@ const KeuanganPage = () => {
   };
 
   const hitungTotalSaldo = (data: any[]) => {
-      let total = 0;
-      data.forEach((item) => {
-        const jumlah = parseFloat(item.jumlah.replace('Rp', '').replace(',', '').trim());
-        if (item.tipe_keuangan_id === 1) {
-          total += jumlah;
-        } else if (item.tipe_keuangan_id === 2) {
-          total -= jumlah;
-        }
-      });
-      setTotalSaldo(total);
+    let total = 0;
+    data.forEach((item) => {
+      const jumlah = parseFloat(item.jumlah.replace('Rp', '').replace(',', '').trim());
+      if (item.tipe_keuangan_id === 1) {
+        total += jumlah;
+      } else if (item.tipe_keuangan_id === 2) {
+        total -= jumlah;
+      }
+    });
+    setTotalSaldo(total);
   };
 
   const handleCreatePengeluaran = async () => {
@@ -66,13 +65,13 @@ const KeuanganPage = () => {
         keterangan,
         jumlah: parseFloat(jumlah),
         tanggal,
-        tipe_keuangan_id: 2, 
+        tipe_keuangan_id: 2,
       });
       setShowModal(false);
       setKeterangan('');
       setJumlah('');
       setTanggal('');
-      fetchKeuangan(); 
+      fetchKeuangan();
     } catch (err) {
       console.error('Error tambah pengeluaran:', err);
       alert('Gagal menambah pengeluaran');
@@ -84,28 +83,26 @@ const KeuanganPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white text-black">
-      <div className="w-full max-w-5xl p-8 border border-gray-300 shadow-lg rounded-lg relative">
-        <button
-          onClick={handleBack}
-          className="text-blue-500 hover:text-blue-700 mb-4"
-        >
-          Kembali ke Dashboard
+    <div className="min-h-screen flex items-center justify-center bg-[#1A1614] text-white">
+      <div className="w-full max-w-5xl p-6 border border-white/10 bg-white/5 backdrop-blur-md shadow-xl rounded-2xl">
+        <button onClick={handleBack} className="text-yellow-300 hover:text-yellow-400 mb-4">
+          &larr; Kembali ke Dashboard
         </button>
+
         <div className="flex items-center justify-between mb-6 relative">
-          <h1 className="text-2xl font-bold text-center w-full">Histori Keuangan</h1>
+          <h1 className="text-2xl font-bold text-center w-full text-yellow-400">Histori Keuangan</h1>
 
           {(userRole === 'admin' || userRole === 'takmir') && (
             <div className="absolute top-0 right-0 flex space-x-2">
               <button
                 onClick={() => setShowModal(true)}
-                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
               >
                 Buat Pengeluaran
               </button>
               <button
                 onClick={() => router.push('/laporan-keuangan')}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
               >
                 Laporan Keuangan
               </button>
@@ -115,26 +112,26 @@ const KeuanganPage = () => {
 
         <div className="text-center mb-6">
           <h2 className="text-xl font-semibold">Total Saldo</h2>
-          <p className={`text-2xl font-bold ${totalSaldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <p className={`text-2xl font-bold ${totalSaldo >= 0 ? 'text-green-400' : 'text-red-400'}`}>
             Rp {totalSaldo.toLocaleString('id-ID')}
           </p>
         </div>
-        
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+
+        {error && <p className="text-red-400 text-center mb-4">{error}</p>}
 
         <div className="space-y-4">
           {keuangan.length > 0 ? (
             keuangan.map((item) => (
               <Link key={item.id} href={`/keuangan/${item.id}`}>
-                <div className="p-4 border border-gray-200 rounded hover:bg-gray-100 transition cursor-pointer">
+                <div className="p-4 border border-white/10 bg-white/10 backdrop-blur rounded-xl hover:bg-white/20 transition cursor-pointer">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="font-semibold">{item.keterangan}</p>
-                      <p className="text-sm text-gray-500">
+                      <p className="font-semibold text-yellow-300">{item.keterangan}</p>
+                      <p className="text-sm text-gray-300">
                         {new Date(item.tanggal).toLocaleDateString('id-ID')}
                       </p>
                     </div>
-                    <div className={`font-bold ${item.tipe_keuangan_id === 1 ? 'text-green-500' : 'text-red-500'}`}>
+                    <div className={`font-bold ${item.tipe_keuangan_id === 1 ? 'text-green-400' : 'text-red-400'}`}>
                       Rp {item.jumlah.toLocaleString('id-ID')}
                     </div>
                   </div>
@@ -142,14 +139,14 @@ const KeuanganPage = () => {
               </Link>
             ))
           ) : (
-            <p className="text-center text-gray-500">Belum ada histori keuangan.</p>
+            <p className="text-center text-gray-400">Belum ada histori keuangan.</p>
           )}
         </div>
 
         {showModal && (
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-              <h2 className="text-2xl font-bold mb-4 text-center">Buat Pengeluaran</h2>
+              <h2 className="text-2xl font-bold mb-4 text-center text-black">Buat Pengeluaran</h2>
               <div className="space-y-4">
                 <input
                   type="text"
@@ -173,7 +170,6 @@ const KeuanganPage = () => {
                   className="w-full border p-2 rounded"
                 />
               </div>
-
               <div className="flex justify-end space-x-2 mt-6">
                 <button
                   onClick={() => setShowModal(false)}
@@ -191,7 +187,7 @@ const KeuanganPage = () => {
             </div>
           </div>
         )}
-        
+
       </div>
     </div>
   );
