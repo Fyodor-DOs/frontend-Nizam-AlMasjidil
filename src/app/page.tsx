@@ -2,128 +2,158 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
+  const router = useRouter();
+
   return (
-    <div className="bg-[#1A1614] text-white font-sans">
-      {/* Header transparan */}
-      <header className="absolute top-0 left-0 w-full z-20">
+    <div className="min-h-screen bg-[#1A1614] text-white">
+      {/* Header with blur effect */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#1A1614]/80 backdrop-blur-sm border-b border-white/10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
           <Link href="/" className="text-xl font-bold text-white">
             AlMasjid Digital
           </Link>
-          <nav className="space-x-6 hidden md:flex">
-            <Link href="#kelas" className="text-gray-200 hover:text-yellow-400">Kelas</Link>
-            <Link href="#kajian" className="text-gray-200 hover:text-yellow-400">Kajian</Link>
-            <Link href="#komunitas" className="text-gray-200 hover:text-yellow-400">Komunitas</Link>
-            <Link href="/login" className="bg-yellow-400 text-black px-4 py-2 rounded-full hover:bg-yellow-300 font-medium">
-              Masuk
-            </Link>
+          <nav className="space-x-6 hidden md:flex items-center">
+            <Link href="/donasi" className="text-gray-300 hover:text-yellow-400 transition">Donasi</Link>
+            <Link href="/keuangan" className="text-gray-300 hover:text-yellow-400 transition">Keuangan</Link>
+            <Link href="/kegiatan" className="text-gray-300 hover:text-yellow-400 transition">Kegiatan</Link>
+            <Button variant="secondary" className="bg-yellow-400 text-black hover:bg-yellow-300" asChild>
+              <Link href="/login">Masuk</Link>
+            </Button>
           </nav>
-          {/* Tombol login mobile */}
-          <Link href="/login" className="md:hidden text-sm bg-yellow-400 text-black px-3 py-1 rounded-full">
-            Masuk
-          </Link>
+          <Button variant="secondary" className="md:hidden bg-yellow-400 text-black hover:bg-yellow-300" asChild>
+            <Link href="/login">Masuk</Link>
+          </Button>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section
-        className="relative h-[90vh] bg-cover bg-no-repeat flex items-center justify-center text-center px-4"
-        style={{
-          backgroundImage: "url('/images/masjid.jpg')",
-          backgroundPosition: 'center top 30%',
-          backgroundSize: 'cover',
-        }}
-      >
-        {/* Overlay Gradasi */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-[#1A1614]"></div>
+      {/* Hero Section with improved gradient */}
+      <section className="relative min-h-[90vh] flex items-center justify-center text-center px-4">
+        <div 
+          className="absolute inset-0 z-0"
+          style={{
+            backgroundImage: "url('/images/masjid8.jpg')",
+            backgroundPosition: 'center',
+            backgroundSize: 'cover',
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1A1614]/95 via-[#1A1614]/70 to-[#1A1614]"></div>
 
-        {/* Konten Hero */}
-        <div className="relative z-10 max-w-3xl pt-20">
-          <h3 className="text-sm uppercase tracking-widest text-gray-300 mb-2">
+        <div className="relative z-10 max-w-3xl pt-24">
+          <p className="text-sm uppercase tracking-widest text-gray-400 mb-2">
             A Digital Masjid
-          </h3>
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">
+          </p>
+          <h1 className="text-4xl md:text-6xl font-bold mb-4 tracking-tight text-white">
             Nizam AlMasjidil Digital
           </h1>
-          <p className="text-gray-300 mb-6">
+          <p className="text-gray-300 text-lg mb-8">
             Transformasi Digital Masjid: Layanan Manajemen Keuangan, Kegiatan,
             Jamaah, Donasi, dan Informasi Terintegrasi.
           </p>
-          <Link href="/login">
-            <button className="bg-white text-black font-semibold px-6 py-3 rounded-full hover:bg-gray-200">
-              Buat Akun
-            </button>
-          </Link>
+          <Button size="lg" className="bg-white text-black hover:bg-gray-200" asChild>
+            <Link href="/register">Buat Akun</Link>
+          </Button>
         </div>
       </section>
 
-      {/* Feature Section */}
-      <section className="max-w-6xl mx-auto py-20 px-4 space-y-20">
-        {[1, 2, 3].map((num) => (
-          <div
-            key={num}
-            id={num === 1 ? 'kelas' : num === 2 ? 'kajian' : 'komunitas'}
-            className={`grid md:grid-cols-2 gap-8 items-center ${
-              num % 2 === 0 ? 'md:flex-row-reverse' : ''
-            }`}
-          >
-            <div className="relative">
-              <span className="absolute -top-10 left-0 text-[120px] text-gray-700 opacity-10 font-bold">
-                0{num}
-              </span>
-              <h2 className="text-3xl font-bold mb-4">
-                {num === 1
-                  ? 'Kelas'
-                  : num === 2
-                  ? 'Kajian'
-                  : 'Komunitas'}
-              </h2>
-              <p className="text-gray-400 mb-4">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
-                feugiat, nisl vel tincidunt malesuada, nunc sapien tempus nulla,
-                in viverra justo libero in sapien.
-              </p>
-              <Link href={`/fitur${num}`} className="text-yellow-400 hover:underline">
-                Selengkapnya →
-              </Link>
-            </div>
-            <div className="w-full h-72 relative rounded-lg overflow-hidden">
-              <Image
-                src="/images/sholat.jpg"
-                alt={`Feature ${num}`}
-                fill
-                className="object-cover"
-              />
-            </div>
-          </div>
-        ))}
+      {/* Feature Section with Cards */}
+      <section className="max-w-6xl mx-auto py-20 px-4">
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
+          Fitur-Fitur yang Tersedia
+        </h2>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {[
+            {
+              id: 'donasi',
+              title: 'Donasi',
+              description: 'Sistem donasi digital yang transparan dan terpercaya. Memudahkan jamaah dalam memberikan donasi untuk pembangunan dan operasional masjid.',
+              icon: '💰',
+              href: '/donasi'
+            },
+            {
+              id: 'keuangan',
+              title: 'Keuangan',
+              description: 'Manajemen keuangan masjid yang modern dan akuntabel. Pencatatan pemasukan, pengeluaran, dan laporan keuangan yang terstruktur.',
+              icon: '📊',
+              href: '/keuangan'
+            },
+            {
+              id: 'kegiatan',
+              title: 'Kegiatan',
+              description: 'Kelola dan informasikan jadwal kegiatan masjid seperti kajian, tahsin, jadwal sholat dan event-event khusus dengan mudah.',
+              icon: '📅',
+              href: '/kegiatan'
+            }
+          ].map((feature) => (
+            <Link 
+              href={feature.href}
+              key={feature.id}
+              className="group"
+            >
+              <Card className="border-0 shadow-none bg-[#1E1E1E] text-white h-full transition-all duration-300 group-hover:bg-white group-hover:text-black">
+                <CardHeader>
+                  <div className="text-4xl mb-4">{feature.icon}</div>
+                  <CardTitle className="text-xl mb-4">{feature.title}</CardTitle>
+                  <CardDescription className="text-gray-100 group-hover:text-gray-600 text-sm">
+                    {feature.description}
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+          ))}
+        </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-[#0D0D0D] py-12 text-gray-400 text-sm">
+      {/* Consultation Section */}
+      <section className="bg-[#2D6A4F] py-20 px-4 text-center text-white">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            Konsultasi Gratis
+          </h2>
+          <p className="text-lg mb-10">
+            Jika Anda mengalami kesulitan, chat kami via WhatsApp untuk mendapatkan solusi cepat.
+          </p>
+          <a
+            href="https://wa.me/6282110992160"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-white text-[#2D6A4F] px-6 py-3 rounded-full hover:bg-opacity-90 transition-all font-medium"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM16.64 8.8C16.49 8.8 16.33 8.79 16.17 8.79C15.63 8.79 14.78 9.03 14.43 9.18C13.94 9.39 13.07 10.02 13.07 10.95C13.07 11.88 13.76 12.31 14.04 12.31C14.32 12.31 14.44 12.24 14.5 12.21C14.56 12.18 15.21 11.91 15.21 11.91C15.21 11.91 16.29 12.49 16.83 12.49C17.38 12.49 17.91 12.18 17.91 11.39C17.91 10.59 17.16 10.2 16.64 8.8ZM12 20.2C7.58 20.2 4 16.62 4 12.2C4 7.78 7.58 4.2 12 4.2C16.42 4.2 20 7.78 20 12.2C20 16.62 16.42 20.2 12 20.2Z" fill="currentColor"/>
+            </svg>
+            CHAT VIA WHATSAPP
+          </a>
+        </div>
+      </section>
+
+      {/* Footer with dark theme */}
+      <footer className="border-t border-white/10 bg-[#0D0D0D] py-12">
         <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-8">
           <div>
-            <h4 className="text-white font-semibold mb-4">More on the Blog</h4>
+            <h4 className="font-semibold mb-4 text-white">More on the Blog</h4>
             <ul className="space-y-2">
-              <li><Link href="#" className="hover:text-yellow-400">Management System</Link></li>
-              <li><Link href="#" className="hover:text-yellow-400">Kegiatan Masjid</Link></li>
-              <li><Link href="#" className="hover:text-yellow-400">Donasi Online</Link></li>
-              <li><Link href="#" className="hover:text-yellow-400">Privacy Policy</Link></li>
+              <li><Link href="/dashboard" className="text-gray-400 hover:text-yellow-400 transition">Dashboard</Link></li>
+              <li><Link href="/donasi" className="text-gray-400 hover:text-yellow-400 transition">Donasi Online</Link></li>
+              <li><Link href="/keuangan" className="text-gray-400 hover:text-yellow-400 transition">Financial</Link></li>
+              <li><Link href="/kegiatan" className="text-gray-400 hover:text-yellow-400 transition">Kegiatan Masjid</Link></li>
             </ul>
           </div>
           <div>
-            <h4 className="text-white font-semibold mb-4">More on Nizam</h4>
+            <h4 className="font-semibold mb-4 text-white">More on Nizam</h4>
             <ul className="space-y-2">
-              <li><Link href="#" className="hover:text-yellow-400">Tentang Kami</Link></li>
-              <li><Link href="#" className="hover:text-yellow-400">Tim</Link></li>
-              <li><Link href="#" className="hover:text-yellow-400">Kontak</Link></li>
+              <li><Link href="/about" className="text-gray-400 hover:text-yellow-400 transition">Tentang Kami</Link></li>
+              <li><Link href="/team" className="text-gray-400 hover:text-yellow-400 transition">Tim</Link></li>
+              <li><Link href="/contact" className="text-gray-400 hover:text-yellow-400 transition">Kontak</Link></li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-8 text-center text-gray-600 text-xs">
+        <div className="mt-8 text-center text-sm text-gray-600">
           © 2025 Almasjid.id, Inc. Terms & Privacy
         </div>
       </footer>
