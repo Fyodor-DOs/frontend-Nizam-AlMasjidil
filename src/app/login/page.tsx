@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, X } from "lucide-react";
 
 const Login = () => {
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +56,15 @@ const Login = () => {
 
       {/* Content */}
       <div className="container relative z-10 flex items-center justify-center px-4">
-        <div className="flex w-full max-w-5xl h-[600px] overflow-hidden rounded-[1rem] bg-neutral-900/50 backdrop-blur-md">
+        <div className="flex w-full max-w-5xl h-[600px] overflow-hidden rounded-[1rem] bg-neutral-900/50 backdrop-blur-md relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-4 top-4 text-neutral-400 hover:text-white hover:bg-neutral-800/50 z-20"
+            onClick={() => router.push('/')}
+          >
+            <X className="h-5 w-5" />
+          </Button>
           {/* Left Side - Mosque Image */}
           <div className="hidden w-1/2 lg:block relative">
             <Image
