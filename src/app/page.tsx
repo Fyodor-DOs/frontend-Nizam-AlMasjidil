@@ -14,7 +14,14 @@ export default function Home() {
       {/* Header with blur effect */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#1A1614]/80 backdrop-blur-sm border-b border-white/10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold text-white">
+          <Link href="/" className="flex items-center gap-2 text-xl font-bold text-white">
+            <Image
+              src="/images/logo_textless.png"
+              alt="AlMasjid Digital Logo"
+              width={40}
+              height={40}
+              className="rounded-full"
+            />
             AlMasjid Digital
           </Link>
           <nav className="space-x-6 hidden md:flex items-center">
@@ -63,30 +70,33 @@ export default function Home() {
       {/* Feature Section with Cards */}
       <section className="max-w-6xl mx-auto py-20 px-4">
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
-          Fitur-Fitur yang Tersedia
+          Mengapa Harus Menggunakan AlMasjid Digital?
         </h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {[
             {
               id: 'donasi',
-              title: 'Donasi',
-              description: 'Sistem donasi digital yang transparan dan terpercaya. Memudahkan jamaah dalam memberikan donasi untuk pembangunan dan operasional masjid.',
+              title: 'Donasi Digital',
+              description: 'Memudahkan jamaah dalam memberikan donasi secara digital kapan saja dan di mana saja, serta memberikan transparansi pengelolaan dana.',
               icon: '💰',
-              href: '/donasi'
+              href: '/donasi',
+              color: 'text-white-400 group-hover:text-black'
             },
             {
               id: 'keuangan',
-              title: 'Keuangan',
-              description: 'Manajemen keuangan masjid yang modern dan akuntabel. Pencatatan pemasukan, pengeluaran, dan laporan keuangan yang terstruktur.',
+              title: 'Manajemen Keuangan',
+              description: 'Laporan pemasukan dan pengeluaran masjid tercatat dengan rapi dan otomatis, sehingga lebih mudah dipantau dan diaudit.',
               icon: '📊',
-              href: '/keuangan'
+              href: '/keuangan',
+              color: 'text-white-400 group-hover:text-black'
             },
             {
               id: 'kegiatan',
-              title: 'Kegiatan',
-              description: 'Kelola dan informasikan jadwal kegiatan masjid seperti kajian, tahsin, jadwal sholat dan event-event khusus dengan mudah.',
+              title: 'Kegiatan Masjid',
+              description: 'Informasi mengenai jadwal kegiatan rutin dan insidental di masjid.',
               icon: '📅',
-              href: '/kegiatan'
+              href: '/kegiatan',
+              color: 'text-white-400 group-hover:text-black'
             }
           ].map((feature) => (
             <Link 
@@ -96,9 +106,9 @@ export default function Home() {
             >
               <Card className="border-0 shadow-none bg-[#1E1E1E] text-white h-full transition-all duration-300 group-hover:bg-white group-hover:text-black">
                 <CardHeader>
-                  <div className="text-4xl mb-4">{feature.icon}</div>
-                  <CardTitle className="text-xl mb-4">{feature.title}</CardTitle>
-                  <CardDescription className="text-gray-100 group-hover:text-gray-600 text-sm">
+                  <div className={`text-4xl mb-4 ${feature.color}`}>{feature.icon}</div>
+                  <CardTitle className={`text-xl mb-4 ${feature.color}`}>{feature.title}</CardTitle>
+                  <CardDescription className="text-gray-400 group-hover:text-gray-600">
                     {feature.description}
                   </CardDescription>
                 </CardHeader>
@@ -109,7 +119,7 @@ export default function Home() {
       </section>
 
       {/* Consultation Section */}
-      <section className="bg-[#2D6A4F] py-20 px-4 text-center text-white">
+      <section className="bg-[#1E1E1E] py-20 px-4 text-center text-white">
         <div className="max-w-3xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Konsultasi Gratis
@@ -128,6 +138,64 @@ export default function Home() {
             </svg>
             CHAT VIA WHATSAPP
           </a>
+        </div>
+      </section>
+
+      {/* Minor Features Section */}
+      <section className="max-w-6xl mx-auto py-20 px-4 border-t border-white/10">
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
+          Fitur-Fitur AlMasjid Digital
+        </h2>
+        <div className="grid md:grid-cols-3 gap-8">
+          {[
+            {
+              title: 'Profil Masjid',
+              description: 'Informasi detail tentang sejarah dan profil lengkap masjid.',
+              icon: '🕌',
+              color: 'text-blue-400'
+            },
+            {
+              title: 'Jadwal Pengajian',
+              description: 'Informasi lengkap mengenai jadwal pengajian rutin maupun khusus.',
+              icon: '📚',
+              color: 'text-orange-400'
+            },
+            {
+              title: 'Inventaris',
+              description: 'Pencatatan dan manajemen inventaris masjid yang terstruktur.',
+              icon: '📋',
+              color: 'text-green-400'
+            },
+            {
+              title: 'Dewan Pengurus',
+              description: 'Informasi struktur dan susunan pengurus masjid.',
+              icon: '👥',
+              color: 'text-purple-400'
+            },
+            {
+              title: 'Laporan Wakaf',
+              description: 'Transparansi pengelolaan dan pelaporan dana wakaf.',
+              icon: '📊',
+              color: 'text-yellow-400'
+            },
+            {
+              title: 'Galeri Gambar',
+              description: 'Dokumentasi kegiatan dan galeri foto masjid.',
+              icon: '🖼️',
+              color: 'text-pink-400'
+            }
+          ].map((feature) => (
+            <div 
+              key={feature.title}
+              className="bg-[#1E1E1E] p-6 rounded-lg"
+            >
+              <div className={`text-4xl mb-4 ${feature.color}`}>{feature.icon}</div>
+              <h3 className="text-xl font-semibold mb-2 text-white">{feature.title}</h3>
+              <p className="text-gray-400 text-sm">
+                {feature.description}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
 
