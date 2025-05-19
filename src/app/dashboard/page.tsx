@@ -10,7 +10,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { ArrowUpRight, ArrowDownRight, DollarSign, Users, Calendar, Activity, ChevronLeft, ChevronRight, LogOut, Wallet, Users2 } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, DollarSign, Users, Calendar, Activity, ChevronLeft, ChevronRight, LogOut, Wallet, Users2, User } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const images = [
   '/images/masjid4.jpg',
@@ -24,6 +32,7 @@ const Dashboard = () => {
   const [role, setRole] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const router = useRouter();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [currentKegiatanIndex, setCurrentKegiatanIndex] = useState(0);
@@ -47,6 +56,7 @@ const Dashboard = () => {
       setAuthToken(token);
       setRole(userRole);
       fetchDashboardData();
+      fetchUserData();
     }
   }, [router]);
 
@@ -79,6 +89,17 @@ const Dashboard = () => {
     } catch (err: any) {
       console.error('Dashboard Data Error:', err);
       setError('Gagal mengambil data dashboard');
+    }
+  };
+
+  const fetchUserData = async () => {
+    try {
+      const response = await api.get('/user');
+      console.log('User data response:', response.data);
+      setUser(response.data);
+    } catch (err) {
+      console.error('Error fetching user data:', err);
+      setError('Gagal mengambil data user');
     }
   };
 
@@ -199,15 +220,50 @@ const Dashboard = () => {
             {role === 'admin' && (
               <Link href="/users" className="text-gray-300 hover:text-yellow-400 transition">Kelola User</Link>
             )}
-            <Button
-              variant="ghost"
-              size="default"
-              className="text-gray-300 hover:text-red-400 hover:bg-red-400/10 transition flex items-center gap-2 px-4 py-2 text-base font-normal"
-              onClick={() => setShowLogoutDialog(true)}
-            >
-              <LogOut className="h-5 w-5" />
-              Logout
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full h-10 w-10 bg-white/5 hover:bg-white/10"
+                >
+                  {user?.foto_profil ? (
+                    <Image
+                      src={`http://localhost:8000/storage/${user.foto_profil}`}
+                      alt="Profile"
+                      width={40}
+                      height={40}
+                      className="rounded-full"
+                    />
+                  ) : (
+                    <User className="h-5 w-5 text-gray-300" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 bg-[#1A1614] border-white/10 text-white">
+                <DropdownMenuLabel className="text-yellow-400">
+                  {user?.nama || 'User'}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-white/10" />
+                <div className="px-2 py-1.5 text-sm text-gray-400">
+                  <p>{user?.email}</p>
+                  <p className="capitalize">{user?.role}</p>
+                </div>
+                <DropdownMenuSeparator className="bg-white/10" />
+                <DropdownMenuItem
+                  className="text-gray-300 hover:text-yellow-400 hover:bg-white/5 cursor-pointer"
+                  onClick={() => router.push('/profil')}
+                >
+                  Detail Profil
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-red-400 hover:text-red-500 hover:bg-white/5 cursor-pointer"
+                  onClick={() => setShowLogoutDialog(true)}
+                >
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </nav>
         </div>
       </header>
