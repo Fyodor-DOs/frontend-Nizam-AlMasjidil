@@ -10,53 +10,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { ArrowUpRight, ArrowDownRight, DollarSign, Users, Calendar, Activity, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, DollarSign, Users, Calendar, Activity, ChevronLeft, ChevronRight, LogOut, Wallet, Users2 } from 'lucide-react';
 
 const images = [
   '/images/masjid4.jpg',
   '/images/masjid2.jpg',
   '/images/masjid3.jpg',
-];
-
-// Sample data for charts
-const monthlyData = [
-  { name: 'Jan', pemasukan: 4000, pengeluaran: 2400 },
-  { name: 'Feb', pemasukan: 3000, pengeluaran: 1398 },
-  { name: 'Mar', pemasukan: 2000, pengeluaran: 9800 },
-  { name: 'Apr', pemasukan: 2780, pengeluaran: 3908 },
-  { name: 'Mei', pemasukan: 1890, pengeluaran: 4800 },
-  { name: 'Jun', pemasukan: 2390, pengeluaran: 3800 },
-];
-
-const donasiData = [
-  { name: 'Zakat', value: 400 },
-  { name: 'Infaq', value: 300 },
-  { name: 'Wakaf', value: 300 },
-  { name: 'Sumbangan', value: 200 },
-];
-
-const kegiatanData = [
-  {
-    id: 1,
-    title: "Kajian Rutin",
-    description: "Kajian rutin setiap Jumat malam bersama Ustadz Ahmad",
-    image: "/images/masjid4.jpg",
-    date: "Setiap Jumat, 19:00 WIB"
-  },
-  {
-    id: 2,
-    title: "Tahsin Al-Quran",
-    description: "Program belajar membaca Al-Quran dengan tajwid yang benar",
-    image: "/images/masjid2.jpg",
-    date: "Setiap Sabtu, 08:00 WIB"
-  },
-  {
-    id: 3,
-    title: "Buka Puasa Bersama",
-    description: "Acara buka puasa bersama jamaah masjid",
-    image: "/images/masjid3.jpg",
-    date: "Setiap hari selama Ramadhan"
-  }
 ];
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
@@ -68,6 +27,15 @@ const Dashboard = () => {
   const router = useRouter();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [currentKegiatanIndex, setCurrentKegiatanIndex] = useState(0);
+  const [keuanganData, setKeuanganData] = useState<any[]>([]);
+  const [donasiData, setDonasiData] = useState<any[]>([]);
+  const [kegiatanData, setKegiatanData] = useState<any[]>([]);
+  const [totalDonasi, setTotalDonasi] = useState<number>(0);
+  const [totalSaldo, setTotalSaldo] = useState<number>(0);
+  const [totalKegiatan, setTotalKegiatan] = useState<number>(0);
+  const [monthlyKeuanganData, setMonthlyKeuanganData] = useState<any[]>([]);
+  const [totalJamaah, setTotalJamaah] = useState<number>(0);
+  const [donasiChartData, setDonasiChartData] = useState<any[]>([]);
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
@@ -78,8 +46,114 @@ const Dashboard = () => {
     } else {
       setAuthToken(token);
       setRole(userRole);
+      fetchDashboardData();
     }
   }, [router]);
+
+  const fetchDashboardData = async () => {
+    try {
+      // Fetch keuangan data
+      const keuanganResponse = await api.get('/keuangan');
+      const keuanganData = keuanganResponse.data;
+      setKeuanganData(keuanganData);
+      calculateTotalSaldo(keuanganData);
+      processMonthlyKeuanganData(keuanganData);
+
+      // Fetch donasi data
+      const donasiResponse = await api.get('/donasi');
+      const donasiData = donasiResponse.data;
+      setDonasiData(donasiData);
+      calculateTotalDonasi(donasiData);
+      processDonasiData(donasiData);
+
+      // Fetch kegiatan data
+      const kegiatanResponse = await api.get('/kegiatan');
+      const kegiatanData = kegiatanResponse.data;
+      setKegiatanData(kegiatanData);
+      setTotalKegiatan(kegiatanData.length);
+
+      // Fetch users data and count jamaah
+      const usersResponse = await api.get('/users');
+      const jamaahCount = usersResponse.data.filter((user: any) => user.role === 'jamaah').length;
+      setTotalJamaah(jamaahCount);
+    } catch (err: any) {
+      console.error('Dashboard Data Error:', err);
+      setError('Gagal mengambil data dashboard');
+    }
+  };
+
+  const calculateTotalSaldo = (data: any[]) => {
+    let total = 0;
+    data.forEach((item) => {
+      if (item.tipe_keuangan_id === 1) {
+        total += parseFloat(item.jumlah);
+      } else if (item.tipe_keuangan_id === 2) {
+        total -= parseFloat(item.jumlah);
+      }
+    });
+    setTotalSaldo(total);
+  };
+
+  const calculateTotalDonasi = (data: any[]) => {
+    const total = data.reduce((sum, item) => sum + parseFloat(item.jumlah), 0);
+    setTotalDonasi(total);
+  };
+
+  const processMonthlyKeuanganData = (data: any[]) => {
+    // Group data by month
+    const monthlyData = data.reduce((acc: any, item: any) => {
+      const date = new Date(item.tanggal);
+      const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!acc[monthYear]) {
+        acc[monthYear] = {
+          month: monthYear,
+          pemasukan: 0,
+          pengeluaran: 0
+        };
+      }
+
+      if (item.tipe_keuangan_id === 1) {
+        acc[monthYear].pemasukan += parseFloat(item.jumlah);
+      } else if (item.tipe_keuangan_id === 2) {
+        acc[monthYear].pengeluaran += parseFloat(item.jumlah);
+      }
+
+      return acc;
+    }, {});
+
+    // Convert to array and sort by month
+    const sortedData = Object.values(monthlyData).sort((a: any, b: any) => 
+      a.month.localeCompare(b.month)
+    );
+
+    // Format month names
+    const formattedData = sortedData.map((item: any) => ({
+      ...item,
+      month: new Date(item.month + '-01').toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
+    }));
+
+    setMonthlyKeuanganData(formattedData);
+  };
+
+  const processDonasiData = (data: any[]) => {
+    // Group donations by payment method
+    const groupedData = data.reduce((acc: any, item: any) => {
+      const method = item.metode_pembayaran;
+      if (!acc[method]) {
+        acc[method] = {
+          metode_pembayaran: method,
+          jumlah: 0
+        };
+      }
+      acc[method].jumlah += parseFloat(item.jumlah);
+      return acc;
+    }, {});
+
+    // Convert to array for the chart
+    const chartData = Object.values(groupedData);
+    setDonasiChartData(chartData);
+  };
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -198,16 +272,29 @@ const Dashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-400">Total Donasi</p>
-                  <h3 className="text-2xl font-bold text-yellow-400">Rp 15.4M</h3>
+                  <h3 className="text-2xl font-bold text-yellow-400">
+                    Rp {totalDonasi.toLocaleString('id-ID')}
+                  </h3>
                 </div>
                 <div className="p-3 bg-yellow-400/10 rounded-full">
                   <DollarSign className="h-6 w-6 text-yellow-400" />
                 </div>
               </div>
-              <div className="flex items-center mt-4">
-                <ArrowUpRight className="h-4 w-4 text-green-400" />
-                <span className="text-sm text-green-400 ml-1">+12.5%</span>
-                <span className="text-sm text-gray-400 ml-2">dari bulan lalu</span>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/5 border-white/10">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-400">Total Saldo</p>
+                  <h3 className="text-2xl font-bold text-green-400">
+                    Rp {totalSaldo.toLocaleString('id-ID')}
+                  </h3>
+                </div>
+                <div className="p-3 bg-green-400/10 rounded-full">
+                  <Wallet className="h-6 w-6 text-green-400" />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -217,35 +304,11 @@ const Dashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-400">Total Jamaah</p>
-                  <h3 className="text-2xl font-bold text-green-400">1,234</h3>
-                </div>
-                <div className="p-3 bg-green-400/10 rounded-full">
-                  <Users className="h-6 w-6 text-green-400" />
-                </div>
-              </div>
-              <div className="flex items-center mt-4">
-                <ArrowUpRight className="h-4 w-4 text-green-400" />
-                <span className="text-sm text-green-400 ml-1">+8.2%</span>
-                <span className="text-sm text-gray-400 ml-2">dari bulan lalu</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/5 border-white/10">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-400">Kegiatan Bulan Ini</p>
-                  <h3 className="text-2xl font-bold text-blue-400">24</h3>
+                  <h3 className="text-2xl font-bold text-blue-400">{totalJamaah}</h3>
                 </div>
                 <div className="p-3 bg-blue-400/10 rounded-full">
-                  <Calendar className="h-6 w-6 text-blue-400" />
+                  <Users2 className="h-6 w-6 text-blue-400" />
                 </div>
-              </div>
-              <div className="flex items-center mt-4">
-                <ArrowDownRight className="h-4 w-4 text-red-400" />
-                <span className="text-sm text-red-400 ml-1">-2.4%</span>
-                <span className="text-sm text-gray-400 ml-2">dari bulan lalu</span>
               </div>
             </CardContent>
           </Card>
@@ -254,17 +317,12 @@ const Dashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">Pengeluaran</p>
-                  <h3 className="text-2xl font-bold text-purple-400">Rp 8.2M</h3>
+                  <p className="text-sm text-gray-400">Total Kegiatan</p>
+                  <h3 className="text-2xl font-bold text-purple-400">{totalKegiatan}</h3>
                 </div>
                 <div className="p-3 bg-purple-400/10 rounded-full">
-                  <Activity className="h-6 w-6 text-purple-400" />
+                  <Calendar className="h-6 w-6 text-purple-400" />
                 </div>
-              </div>
-              <div className="flex items-center mt-4">
-                <ArrowDownRight className="h-4 w-4 text-red-400" />
-                <span className="text-sm text-red-400 ml-1">-3.1%</span>
-                <span className="text-sm text-gray-400 ml-2">dari bulan lalu</span>
               </div>
             </CardContent>
           </Card>
@@ -283,14 +341,14 @@ const Dashboard = () => {
             <Card className="bg-white/5 border-white/10">
               <CardHeader>
                 <CardTitle>Laporan Keuangan Bulanan</CardTitle>
-                <CardDescription>Grafik pemasukan dan pengeluaran masjid</CardDescription>
+                <CardDescription>Grafik pemasukan dan pengeluaran masjid per bulan</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-[400px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={monthlyData}>
+                    <BarChart data={monthlyKeuanganData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
-                      <XAxis dataKey="name" stroke="#ffffff80" />
+                      <XAxis dataKey="month" stroke="#ffffff80" />
                       <YAxis stroke="#ffffff80" />
                       <Tooltip 
                         contentStyle={{ 
@@ -299,7 +357,7 @@ const Dashboard = () => {
                           borderRadius: '8px'
                         }}
                       />
-                      <Bar dataKey="pemasukan" fill="#FCD34D" name="Pemasukan" />
+                      <Bar dataKey="pemasukan" fill="#22C55E" name="Pemasukan" />
                       <Bar dataKey="pengeluaran" fill="#EF4444" name="Pengeluaran" />
                     </BarChart>
                   </ResponsiveContainer>
@@ -311,24 +369,26 @@ const Dashboard = () => {
           <TabsContent value="donasi">
             <Card className="bg-white/5 border-white/10">
               <CardHeader>
-                <CardTitle>Distribusi Donasi</CardTitle>
-                <CardDescription>Persentase jenis donasi yang diterima</CardDescription>
+                <CardTitle>Distribusi Metode Pembayaran</CardTitle>
+                <CardDescription>Persentase metode pembayaran yang digunakan</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-[400px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={donasiData}
+                        data={donasiChartData}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
                         outerRadius={150}
                         fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        dataKey="jumlah"
+                        label={({ metode_pembayaran, percent }) => 
+                          `${metode_pembayaran.charAt(0).toUpperCase() + metode_pembayaran.slice(1)} ${(percent * 100).toFixed(0)}%`
+                        }
                       >
-                        {donasiData.map((entry, index) => (
+                        {donasiChartData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
@@ -338,6 +398,7 @@ const Dashboard = () => {
                           border: '1px solid #ffffff20',
                           borderRadius: '8px'
                         }}
+                        formatter={(value: number) => `Rp ${value.toLocaleString('id-ID')}`}
                       />
                     </PieChart>
                   </ResponsiveContainer>
@@ -366,19 +427,21 @@ const Dashboard = () => {
                     }`}
                   >
                     <div className="relative h-full">
-                      <Image
-                        src={kegiatan.image}
-                        alt={kegiatan.title}
-                        fill
-                        className="object-cover"
-                      />
+                      {kegiatan.gambar && (
+                        <Image
+                          src={`http://localhost:8000/storage/${kegiatan.gambar}`}
+                          alt={kegiatan.nama_kegiatan}
+                          fill
+                          className="object-cover"
+                        />
+                      )}
                       <div className="absolute inset-0 bg-black/60 flex items-center">
                         <div className="w-full max-w-2xl mx-auto px-6">
-                          <h3 className="text-3xl font-bold text-yellow-400 mb-4">{kegiatan.title}</h3>
-                          <p className="text-lg text-gray-200 mb-4">{kegiatan.description}</p>
+                          <h3 className="text-3xl font-bold text-yellow-400 mb-4">{kegiatan.nama_kegiatan}</h3>
+                          <p className="text-lg text-gray-200 mb-4">{kegiatan.deskripsi}</p>
                           <p className="text-sm text-gray-400 flex items-center">
                             <Calendar className="h-4 w-4 mr-2" />
-                            {kegiatan.date}
+                            {kegiatan.tanggal} - {kegiatan.waktu}
                           </p>
                         </div>
                       </div>
