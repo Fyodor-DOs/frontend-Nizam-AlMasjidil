@@ -133,10 +133,12 @@ const KegiatanPage = () => {
     setShowModal(true);
     setSelectedKegiatan(null);
   };
-
   return (
+    // warna background
     <div className="min-h-screen bg-[#1A1614] flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden">
+      {/* warna background container */}
+      <div className="w-full max-w-4xl bg-black rounded-2xl shadow-2xl overflow-hidden"> 
+        {/* warna background header */}
         <div className="bg-yellow-400 text-black py-4 px-6 text-center font-bold text-lg relative">
           Daftar Kegiatan
           {(userRole === 'admin' || userRole === 'takmir') && (
@@ -147,6 +149,7 @@ const KegiatanPage = () => {
                 setFormData({ nama_kegiatan: '', deskripsi: '', tanggal: '', waktu: '', lokasi: '' });
                 setGambar(null);
               }}
+              //  warna button
               className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded text-sm"
             >
               Tambah
@@ -154,7 +157,7 @@ const KegiatanPage = () => {
           )}
         </div>
 
-        <div className="p-6 bg-white">
+        <div className="p-6 border border-grey bg-[#1A1614] rounded">
           {error && (
             <p className="mb-4 p-3 text-sm text-red-600 bg-red-100 rounded">{error}</p>
           )}
@@ -167,20 +170,22 @@ const KegiatanPage = () => {
                 <div
                   key={item.id}
                   onClick={() => handleShowDetail(item)}
-                  className="p-4 border border-gray-200 rounded-lg shadow-sm bg-gray-50 cursor-pointer hover:bg-gray-100 transition"
-                >
-                  <h2 className="text-xl font-bold text-yellow-700">{item.nama_kegiatan}</h2>
-                  <p className="text-gray-700 mb-2">{item.deskripsi}</p>
-                  <p className="text-sm text-gray-600">
-                    <strong>Tanggal:</strong> {item.tanggal} <br />
-                    <strong>Waktu:</strong> {item.waktu} <br />
-                    <strong>Lokasi:</strong> {item.lokasi}
-                  </p>
+                  className="flex items-start gap-2 p-4 border border-gray-700 rounded-lg shadow-sm bg-[#1A1614] text-white cursor-pointer hover:bg-[#2a2421] transition">
+                  <div className="flex-1">
+                    <h2 className="text-xl font-bold text-yellow-400">{item.nama_kegiatan}</h2>
+                    <p className="mb-2 text-white">{item.deskripsi}</p>
+                    <p className="text-sm text-gray-300">
+                      <strong>Tanggal:</strong> {item.tanggal} <br />
+                      <strong>Waktu:</strong> {item.waktu} <br />
+                      <strong>Lokasi:</strong> {item.lokasi}
+                    </p>
+                  </div>
+
                   {item.gambar && (
                     <img
                       src={`http://localhost:8000/storage/${item.gambar}`}
                       alt={item.nama_kegiatan}
-                      className="w-full h-48 object-cover rounded mt-3"
+                      className="w-40 h-32 object-cover rounded"
                     />
                   )}
                 </div>
@@ -200,7 +205,9 @@ const KegiatanPage = () => {
       {/* Modal Tambah / Edit */}
       {showModal && (userRole === 'admin' || userRole === 'takmir') && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-gray-100 p-6 rounded-lg shadow-2xl w-full max-w-md text-black">
+          {/* warna background modal */}
+          <div className="border border-gray-700 bg-[#1A1614] p-6 rounded-lg shadow-2xl w-full max-w-md text-white">
+
             <h2 className="text-2xl font-bold mb-4 text-center">
               {editMode ? 'Edit Kegiatan' : 'Buat Kegiatan'}
             </h2>
@@ -210,6 +217,7 @@ const KegiatanPage = () => {
                 placeholder="Nama Kegiatan"
                 value={formData.nama_kegiatan}
                 onChange={(e) => setFormData({ ...formData, nama_kegiatan: e.target.value })}
+                // warna border input
                 className="w-full border border-gray-300 p-2 rounded bg-white text-gray-800"
               />
               <textarea
@@ -272,8 +280,10 @@ const KegiatanPage = () => {
 
       {/* Modal Detail */}
       {selectedKegiatan && (
+        // warna background modal
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-2xl w-full max-w-md text-black">
+          {/* warna field */}
+          <div className="border border-grey bg-[#1A1614] p-6 rounded-lg shadow-2xl w-full max-w-md text-white">
             <h2 className="text-2xl font-bold mb-4 text-center">{selectedKegiatan.nama_kegiatan}</h2>
             <p className="mb-2"><strong>Deskripsi:</strong> {selectedKegiatan.deskripsi}</p>
             <p className="mb-2"><strong>Tanggal:</strong> {selectedKegiatan.tanggal}</p>
