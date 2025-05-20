@@ -5,9 +5,63 @@ import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
+// Daftar kota-kota besar di Indonesia
+const cities = [
+  { name: 'Jakarta', value: 'Jakarta' },
+  { name: 'Bandung', value: 'Bandung' },
+  { name: 'Surabaya', value: 'Surabaya' },
+  { name: 'Medan', value: 'Medan' },
+  { name: 'Semarang', value: 'Semarang' },
+  { name: 'Yogyakarta', value: 'Yogyakarta' },
+  { name: 'Palembang', value: 'Palembang' },
+  { name: 'Makassar', value: 'Makassar' },
+  { name: 'Denpasar', value: 'Denpasar' },
+  { name: 'Malang', value: 'Malang' }
+];
 
 export default function Home() {
   const router = useRouter();
+  const [prayerTimes, setPrayerTimes] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedCity, setSelectedCity] = useState('Jakarta');
+
+  useEffect(() => {
+    // Mengambil kota yang tersimpan di localStorage
+    const savedCity = localStorage.getItem('selectedCity');
+    if (savedCity) {
+      setSelectedCity(savedCity);
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchPrayerTimes = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(
+          `https://api.aladhan.com/v1/timingsByCity?city=${selectedCity}&country=Indonesia&method=11`
+        );
+        
+        const data = await response.json();
+        if (data.code === 200) {
+          setPrayerTimes(data.data.timings);
+          // Menyimpan kota yang dipilih ke localStorage
+          localStorage.setItem('selectedCity', selectedCity);
+        } else {
+          setError('Gagal mengambil jadwal sholat');
+        }
+      } catch (err) {
+        console.error('Error fetching prayer times:', err);
+        setError('Terjadi kesalahan saat mengambil jadwal sholat');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPrayerTimes();
+  }, [selectedCity]);
 
   return (
     <div className="min-h-screen bg-[#1A1614] text-white">
@@ -39,7 +93,7 @@ export default function Home() {
       </header>
 
       {/* Hero Section with improved gradient */}
-      <section className="relative min-h-[90vh] flex items-center justify-center text-center px-4">
+      <section id="hero-section" className="relative min-h-[90vh] flex items-center justify-center text-center px-4">
         <div 
           className="absolute inset-0 z-0"
           style={{
@@ -65,6 +119,57 @@ export default function Home() {
             <Link href="/register">Buat Akun</Link>
           </Button>
         </div>
+      </section>
+
+      {/* Prayer Times Section */}
+      <section id="prayer-times-section" className="max-w-6xl mx-auto py-20 px-4">
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-8">
+          Jadwal Sholat Hari Ini
+        </h2>
+        
+        {/* City Selector */}
+        <div className="max-w-xs mx-auto mb-12">
+          <select
+            value={selectedCity}
+            onChange={(e) => setSelectedCity(e.target.value)}
+            className="w-full p-3 rounded-lg bg-[#1E1E1E] text-white border border-white/10 focus:border-yellow-400 focus:outline-none"
+          >
+            {cities.map((city) => (
+              <option key={city.value} value={city.value}>
+                {city.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {loading ? (
+          <div className="text-center text-gray-400">Memuat jadwal sholat...</div>
+        ) : error ? (
+          <div className="text-center text-red-400">{error}</div>
+        ) : prayerTimes ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {[
+              { name: 'Imsak', time: prayerTimes.Imsak, icon: '⏰' },
+              { name: 'Subuh', time: prayerTimes.Fajr, icon: '🌅' },
+              { name: 'Dzuhur', time: prayerTimes.Dhuhr, icon: '☀️' },
+              { name: 'Ashar', time: prayerTimes.Asr, icon: '🌤️' },
+              { name: 'Maghrib', time: prayerTimes.Maghrib, icon: '🌅' },
+              { name: 'Isya', time: prayerTimes.Isha, icon: '🌙' }
+            ].map((prayer) => (
+              <div 
+              key={prayer.name}
+                className="bg-[#1E1E1E] p-6 rounded-lg text-center hover:bg-white hover:text-black transition-all duration-300 cursor-pointer"
+              >
+                <div className="text-4xl mb-4">{prayer.icon}</div>
+                <h3 className="text-xl font-semibold mb-2">{prayer.name}</h3>
+                <p className="text-2xl font-bold text-yellow-400">{prayer.time}</p>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        <p className="text-center text-gray-400 mt-8 text-sm">
+          Jadwal sholat dapat berubah sesuai dengan lokasi dan waktu setempat
+        </p>
       </section>
 
       {/* Feature Section with Cards */}
@@ -183,11 +288,40 @@ export default function Home() {
               description: 'Dokumentasi kegiatan dan galeri foto masjid.',
               icon: '🖼️',
               color: 'text-pink-400'
+            },
+            {
+              title: 'Artikel',
+              description: 'Kumpulan artikel dan tulisan tentang keislaman dan kegiatan masjid.',
+              icon: '📝',
+              color: 'text-emerald-400'
+            },
+            {
+              title: 'Reservasi',
+              description: 'Pemesanan fasilitas masjid dan pendaftaran kegiatan secara online.',
+              icon: '📅',
+              color: 'text-cyan-400'
+            },
+            {
+              title: 'Jadwal Sholat',
+              description: 'Informasi jadwal sholat harian dan pengingat waktu sholat.',
+              icon: '🕌',
+              color: 'text-amber-400'
             }
           ].map((feature) => (
             <div 
               key={feature.title}
-              className="bg-[#1E1E1E] p-6 rounded-lg"
+              className={`bg-[#1E1E1E] p-6 rounded-lg ${feature.title === 'Jadwal Sholat' || feature.title === 'Profil Masjid' ? 'cursor-pointer hover:bg-white/10 transition-all duration-300' : ''}`}
+              onClick={feature.title === 'Jadwal Sholat' ? () => {
+                const prayerSection = document.getElementById('prayer-times-section');
+                if (prayerSection) {
+                  prayerSection.scrollIntoView({ behavior: 'smooth' });
+                }
+              } : feature.title === 'Profil Masjid' ? () => {
+                const heroSection = document.getElementById('hero-section');
+                if (heroSection) {
+                  heroSection.scrollIntoView({ behavior: 'smooth' });
+                }
+              } : undefined}
             >
               <div className={`text-4xl mb-4 ${feature.color}`}>{feature.icon}</div>
               <h3 className="text-xl font-semibold mb-2 text-white">{feature.title}</h3>

@@ -15,7 +15,7 @@ git pull origin main
 
 ### 2. Install Dependency
 ```bash
-npm install axios
+npm install axios --legacy-peer-deps
 ```
 
 ### 3. Jalankan Aplikasi
