@@ -3,7 +3,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -62,29 +61,25 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#1A1614] text-white">
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#1A1614]/80 backdrop-blur-sm border-b border-white/10">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/" className="flex items-center gap-2 text-xl font-bold text-white">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#1A1614]/95 backdrop-blur-md border-b border-white/10 shadow-lg">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+          <Link href="/" className="flex items-center gap-3 text-xl font-bold text-white hover:opacity-90 transition-opacity">
             <Image
               src="/images/logo_textless.png"
               alt="AlMasjid Digital Logo"
-              width={40}
-              height={40}
-              className="rounded-full"
+              width={35}
+              height={35}
+              className="rounded-full shadow-md"
             />
-            AlMasjid Digital
+            <span className="bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">
+              AlMasjid Digital
+            </span>
           </Link>
-          <nav className="space-x-6 hidden md:flex items-center">
-            <Link href="/donasi" className="text-gray-300 hover:text-yellow-400 transition">Donasi</Link>
-            <Link href="/keuangan" className="text-gray-300 hover:text-yellow-400 transition">Keuangan</Link>
-            <Link href="/kegiatan" className="text-gray-300 hover:text-yellow-400 transition">Kegiatan</Link>
+          <nav className="flex items-center gap-8">
             <Button variant="secondary" className="bg-yellow-400 text-black hover:bg-yellow-300" asChild>
               <Link href="/login">Masuk</Link>
             </Button>
           </nav>
-          <Button variant="secondary" className="md:hidden bg-yellow-400 text-black hover:bg-yellow-300" asChild>
-            <Link href="/login">Masuk</Link>
-          </Button>
         </div>
       </header>
 
