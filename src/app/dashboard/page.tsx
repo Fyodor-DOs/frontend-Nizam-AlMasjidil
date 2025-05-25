@@ -555,7 +555,7 @@ const Dashboard = () => {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="h-[200px]">
+              <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -597,31 +597,59 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="bg-white/5 border-white/10">
             <CardHeader>
-              <CardTitle className="text-white">Aktivitas Terbaru</CardTitle>
-              <CardDescription className="text-gray-300">Riwayat aktivitas terakhir</CardDescription>
+              <CardTitle className="text-white">Aktivitas Keuangan</CardTitle>
+              <CardDescription className="text-gray-300">Riwayat transaksi keuangan</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {[1, 2, 3, 4, 5].map((_, index) => (
+              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                {[...keuanganData].reverse().slice(0, 20).map((item, index) => (
                   <div key={index} className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
-                    <div className={`p-2 rounded-full ${index % 2 === 0 ? 'bg-green-400/10' : 'bg-blue-400/10'}`}>
-                      {index % 2 === 0 ? (
-                        <DollarSign className="h-4 w-4 text-green-400" />
+                    <div className={`p-2 rounded-full ${item.tipe_keuangan_id === 1 ? 'bg-green-400/10' : 'bg-red-400/10'}`}>
+                      {item.tipe_keuangan_id === 1 ? (
+                        <ArrowUpRight className="h-4 w-4 text-green-400" />
                       ) : (
-                        <Users className="h-4 w-4 text-blue-400" />
+                        <ArrowDownRight className="h-4 w-4 text-red-400" />
                       )}
                     </div>
                     <div className="flex-1">
                       <p className="text-sm text-white">
-                        {index % 2 === 0 ? 'Donasi baru diterima' : 'Jamaah baru mendaftar'}
+                        {item.tipe_keuangan_id === 1 ? 'Pemasukan' : 'Pengeluaran'}
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
-                        {index % 2 === 0 ? 'Rp 500.000' : 'Ahmad Fadillah'}
+                        Rp {parseFloat(item.jumlah).toLocaleString('id-ID')}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {item.tipe_keuangan_id === 1 ? (
+                          <>
+                            {item.keterangan && (
+                              <>
+                                <span className="text-gray-300">Dari: </span>
+                                {item.keterangan}
+                                {(item.user?.name || item.metode_pembayaran) && <span className="text-gray-300 ml-2">| </span>}
+                              </>
+                            )}
+                            {item.user?.name && (
+                              <>
+                                <span className="text-gray-300">User: </span>
+                                {item.user.name}
+                              </>
+                            )}
+                            {item.metode_pembayaran && (
+                              <>
+                                {item.user?.name && <span className="text-gray-300 ml-2">| </span>}
+                                <span className="text-gray-300">Metode: </span>
+                                {item.metode_pembayaran}
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-gray-300">Untuk: </span>
+                            {item.keterangan || 'Tidak disebutkan'}
+                          </>
+                        )}
                       </p>
                     </div>
-                    <span className="text-xs text-gray-400">
-                      {index === 0 ? 'Baru saja' : `${index} jam yang lalu`}
-                    </span>
                   </div>
                 ))}
               </div>
@@ -630,12 +658,12 @@ const Dashboard = () => {
 
           <Card className="bg-white/5 border-white/10">
             <CardHeader>
-              <CardTitle className="text-white">Kegiatan Mendatang</CardTitle>
-              <CardDescription className="text-gray-300">Jadwal kegiatan terdekat</CardDescription>
+              <CardTitle className="text-white">Kegiatan Masjid</CardTitle>
+              <CardDescription className="text-gray-300">Riwayat kegiatan masjid</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {kegiatanData.slice(0, 5).map((kegiatan, index) => (
+              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                {[...kegiatanData].reverse().map((kegiatan, index) => (
                   <div key={kegiatan.id} className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
                     <div className="p-2 rounded-full bg-purple-400/10">
                       <Calendar className="h-4 w-4 text-purple-400" />
@@ -643,10 +671,13 @@ const Dashboard = () => {
                     <div className="flex-1">
                       <p className="text-sm text-white">{kegiatan.nama_kegiatan}</p>
                       <p className="text-xs text-gray-400 mt-1">{kegiatan.tanggal} - {kegiatan.waktu}</p>
+                      {kegiatan.keterangan && (
+                        <p className="text-xs text-gray-400 mt-1">
+                          <span className="text-gray-300">Keterangan: </span>
+                          {kegiatan.keterangan}
+                        </p>
+                      )}
                     </div>
-                    <span className="text-xs text-gray-400">
-                      {index === 0 ? 'Hari ini' : `${index} hari lagi`}
-                    </span>
                   </div>
                 ))}
               </div>
