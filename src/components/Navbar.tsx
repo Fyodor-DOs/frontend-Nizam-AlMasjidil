@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { User, LogOut, DollarSign, Wallet, Calendar, Users } from 'lucide-react';
+import { User, LogOut, DollarSign, Wallet, Calendar, Users, BookOpen } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,6 +65,10 @@ const Navbar = ({ role, user }: NavbarProps) => {
               <Link href="/kegiatan" className="flex items-center gap-2 text-gray-300 hover:text-yellow-400 transition-colors duration-200 font-medium">
                 <Calendar className="h-4 w-4" />
                 <span>Kegiatan</span>
+              </Link>
+              <Link href="/tausiyah" className="flex items-center gap-2 text-gray-300 hover:text-yellow-400 transition-colors duration-200 font-medium">
+                <BookOpen className="h-4 w-4" />
+                <span>Tausiyah</span>
               </Link>
               {role === 'admin' && (
                 <Link href="/users" className="flex items-center gap-2 text-gray-300 hover:text-yellow-400 transition-colors duration-200 font-medium">
