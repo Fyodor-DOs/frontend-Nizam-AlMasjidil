@@ -43,7 +43,6 @@ const Dashboard = () => {
   const [totalDonasi, setTotalDonasi] = useState<number>(0);
   const [totalSaldo, setTotalSaldo] = useState<number>(0);
   const [totalKegiatan, setTotalKegiatan] = useState<number>(0);
-  const [totalJamaah, setTotalJamaah] = useState<number>(0);
   const [donasiChartData, setDonasiChartData] = useState<any[]>([]);
   const [keuanganFilter, setKeuanganFilter] = useState('bulan');
   const [donasiFilter, setDonasiFilter] = useState('bulan');
@@ -83,11 +82,6 @@ const Dashboard = () => {
       const kegiatanData = kegiatanResponse.data;
       setKegiatanData(kegiatanData);
       setTotalKegiatan(kegiatanData.length);
-
-      // Fetch users data and count jamaah
-      const usersResponse = await api.get('/users');
-      const jamaahCount = usersResponse.data.filter((user: any) => user.role === 'jamaah').length;
-      setTotalJamaah(jamaahCount);
     } catch (err: any) {
       console.error('Dashboard Data Error:', err);
       setError('Gagal mengambil data dashboard');
@@ -376,7 +370,7 @@ const Dashboard = () => {
 
       {/* Quick Stats */}
       <section className="w-full max-w-6xl mx-auto mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
@@ -404,20 +398,6 @@ const Dashboard = () => {
                 </div>
                 <div className="p-3 bg-green-400/10 rounded-full">
                   <Wallet className="h-6 w-6 text-green-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-300">Total Jamaah</p>
-                  <h3 className="text-2xl font-bold text-blue-400">{totalJamaah}</h3>
-                </div>
-                <div className="p-3 bg-blue-400/10 rounded-full">
-                  <Users2 className="h-6 w-6 text-blue-400" />
                 </div>
               </div>
             </CardContent>
@@ -658,12 +638,12 @@ const Dashboard = () => {
 
           <Card className="bg-white/5 border-white/10">
             <CardHeader>
-              <CardTitle className="text-white">Kegiatan Masjid</CardTitle>
-              <CardDescription className="text-gray-300">Riwayat kegiatan masjid</CardDescription>
+              <CardTitle className="text-white">Kegiatan Mendatang</CardTitle>
+              <CardDescription className="text-gray-300">Jadwal kegiatan terdekat</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                {[...kegiatanData].reverse().map((kegiatan, index) => (
+              <div className="space-y-4">
+                {kegiatanData.slice(0, 5).map((kegiatan, index) => (
                   <div key={kegiatan.id} className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
                     <div className="p-2 rounded-full bg-purple-400/10">
                       <Calendar className="h-4 w-4 text-purple-400" />
@@ -671,12 +651,6 @@ const Dashboard = () => {
                     <div className="flex-1">
                       <p className="text-sm text-white">{kegiatan.nama_kegiatan}</p>
                       <p className="text-xs text-gray-400 mt-1">{kegiatan.tanggal} - {kegiatan.waktu}</p>
-                      {kegiatan.keterangan && (
-                        <p className="text-xs text-gray-400 mt-1">
-                          <span className="text-gray-300">Keterangan: </span>
-                          {kegiatan.keterangan}
-                        </p>
-                      )}
                     </div>
                   </div>
                 ))}
