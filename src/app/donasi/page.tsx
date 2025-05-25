@@ -23,12 +23,25 @@ const Donasi = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
+    const userRole = localStorage.getItem('role');
     if (token) {
       setAuthToken(token);
+      setRole(userRole);
+      fetchUserData();
     } else {
       router.push('/login');
     }
   }, [router]);
+
+  const fetchUserData = async () => {
+    try {
+      const response = await api.get('/user');
+      setUser(response.data);
+    } catch (err) {
+      console.error('Error fetching user data:', err);
+      setError('Gagal mengambil data user');
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
