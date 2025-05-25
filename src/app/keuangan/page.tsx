@@ -58,7 +58,7 @@ const KeuanganPage = () => {
     let total = 0;
     data.forEach((item) => {
       const jumlahString = String(item.jumlah);
-      const jumlahAngka = parseFloat(jumlahString.replace('Rp', '').replace(/[.,]/g, '').trim()); 
+      const jumlahAngka = parseFloat(jumlahString); 
       if (!isNaN(jumlahAngka)) { 
         if (item.tipe_keuangan_id === 1) { 
           total += jumlahAngka;

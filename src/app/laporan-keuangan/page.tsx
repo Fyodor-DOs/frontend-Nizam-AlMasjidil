@@ -17,7 +17,6 @@ const LaporanPage = () => {
     const token = localStorage.getItem('authToken');
     if (token) setAuthToken(token);
     
-    // Set default month and year to current date
     const now = new Date();
     setBulan(String(now.getMonth() + 1).padStart(2, '0'));
     setTahun(String(now.getFullYear()));
@@ -50,26 +49,22 @@ const LaporanPage = () => {
   const exportToPDF = () => {
     const doc = new jsPDF();
     
-    // Add letterhead
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.text('MASJID NIZAM AL-MASJIDIL', 105, 20, { align: 'center' });
     
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
-    doc.text('Jl. Raya Cikarang - Cibarusah No. 123', 105, 30, { align: 'center' });
-    doc.text('Telp: (021) 1234567', 105, 40, { align: 'center' });
+    doc.text('Jl. Rawasari Timur Raya No.04, Kota Jakarta Pusat', 105, 30, { align: 'center' });
+    doc.text('Telp: (021) 7543541', 105, 40, { align: 'center' });
     
-    // Add title
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text(`LAPORAN KEUANGAN BULAN ${getNamaBulan(bulan)} ${tahun}`, 105, 55, { align: 'center' });
     
-    // Add line
     doc.setLineWidth(0.5);
     doc.line(20, 60, 190, 60);
     
-    // Prepare table data
     const tableData = laporan.map((item) => [
       new Date(item.tanggal).toLocaleDateString('id-ID'),
       item.keterangan,
@@ -77,10 +72,8 @@ const LaporanPage = () => {
       item.tipe_keuangan_id === 2 ? `Rp ${parseFloat(item.jumlah).toLocaleString('id-ID')}` : '',
     ]);
 
-    // Add saldo akhir
     tableData.push(['', 'Saldo Akhir', '', `Rp ${saldoAkhir.toLocaleString('id-ID')}`]);
 
-    // Add table
     autoTable(doc, {
       head: [['Tanggal', 'Keterangan', 'Uang Masuk', 'Uang Keluar']],
       body: tableData,
@@ -100,7 +93,6 @@ const LaporanPage = () => {
       },
     });
 
-    // Add footer
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
