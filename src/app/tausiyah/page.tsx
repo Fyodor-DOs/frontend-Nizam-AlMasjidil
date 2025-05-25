@@ -38,9 +38,19 @@ const TausiyahPage = () => {
     if (token) {
       setAuthToken(token);
       setUserRole(role);
+      fetchUserData();
     }
     fetchTausiyah();
   }, [router]);
+
+  const fetchUserData = async () => {
+    try {
+      const response = await api.get('/user');
+      setUser(response.data);
+    } catch (err) {
+      console.error('Error fetching user data:', err);
+    }
+  };
 
   const fetchTausiyah = async () => {
     try {
