@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-// Daftar kota-kota besar di Indonesia
 const cities = [
   { name: 'Jakarta', value: 'Jakarta' },
   { name: 'Bandung', value: 'Bandung' },
@@ -29,7 +28,6 @@ export default function Home() {
   const [selectedCity, setSelectedCity] = useState('Jakarta');
 
   useEffect(() => {
-    // Mengambil kota yang tersimpan di localStorage
     const savedCity = localStorage.getItem('selectedCity');
     if (savedCity) {
       setSelectedCity(savedCity);
@@ -47,7 +45,6 @@ export default function Home() {
         const data = await response.json();
         if (data.code === 200) {
           setPrayerTimes(data.data.timings);
-          // Menyimpan kota yang dipilih ke localStorage
           localStorage.setItem('selectedCity', selectedCity);
         } else {
           setError('Gagal mengambil jadwal sholat');
@@ -65,7 +62,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#1A1614] text-white">
-      {/* Header with blur effect */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#1A1614]/80 backdrop-blur-sm border-b border-white/10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
           <Link href="/" className="flex items-center gap-2 text-xl font-bold text-white">
@@ -92,7 +88,6 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section with improved gradient */}
       <section id="hero-section" className="relative min-h-[90vh] flex items-center justify-center text-center px-4">
         <div 
           className="absolute inset-0 z-0"
@@ -121,13 +116,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Prayer Times Section */}
       <section id="prayer-times-section" className="max-w-6xl mx-auto py-20 px-4">
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-8">
           Jadwal Sholat Hari Ini
         </h2>
         
-        {/* City Selector */}
         <div className="max-w-xs mx-auto mb-12">
           <select
             value={selectedCity}
@@ -158,10 +151,10 @@ export default function Home() {
             ].map((prayer) => (
               <div 
               key={prayer.name}
-                className="bg-[#1E1E1E] p-6 rounded-lg text-center hover:bg-white hover:text-black transition-all duration-300 cursor-pointer"
+                className="bg-[#1E1E1E] p-6 rounded-lg text-center hover:bg-white/10 transition-all duration-300 cursor-pointer"
               >
                 <div className="text-4xl mb-4">{prayer.icon}</div>
-                <h3 className="text-xl font-semibold mb-2">{prayer.name}</h3>
+                <h3 className="text-xl font-semibold mb-2 text-white">{prayer.name}</h3>
                 <p className="text-2xl font-bold text-yellow-400">{prayer.time}</p>
               </div>
             ))}
@@ -172,58 +165,51 @@ export default function Home() {
         </p>
       </section>
 
-      {/* Feature Section with Cards */}
       <section className="max-w-6xl mx-auto py-20 px-4">
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
           Mengapa Harus Menggunakan AlMasjid Digital?
         </h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-3 gap-8">
           {[
             {
-              id: 'donasi',
               title: 'Donasi Digital',
               description: 'Memudahkan jamaah dalam memberikan donasi secara digital kapan saja dan di mana saja, serta memberikan transparansi pengelolaan dana.',
               icon: '💰',
-              href: '/donasi',
-              color: 'text-white-400 group-hover:text-black'
+              color: 'text-yellow-400'
             },
             {
-              id: 'keuangan',
               title: 'Manajemen Keuangan',
               description: 'Laporan pemasukan dan pengeluaran masjid tercatat dengan rapi dan otomatis, sehingga lebih mudah dipantau dan diaudit.',
               icon: '📊',
-              href: '/keuangan',
-              color: 'text-white-400 group-hover:text-black'
+              color: 'text-orange-400'
             },
             {
-              id: 'kegiatan',
               title: 'Kegiatan Masjid',
               description: 'Informasi mengenai jadwal kegiatan rutin dan insidental di masjid.',
               icon: '📅',
-              href: '/kegiatan',
-              color: 'text-white-400 group-hover:text-black'
+              color: 'text-green-400'
             }
           ].map((feature) => (
-            <Link 
-              href={feature.href}
-              key={feature.id}
-              className="group"
+            <div 
+              key={feature.title}
+              className={`bg-[#1E1E1E] p-6 rounded-lg cursor-pointer hover:bg-white/10 transition-all duration-300`}
+              onClick={() => {
+                const heroSection = document.getElementById('hero-section');
+                if (heroSection) {
+                  heroSection.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
             >
-              <Card className="border-0 shadow-none bg-[#1E1E1E] text-white h-full transition-all duration-300 group-hover:bg-white group-hover:text-black">
-                <CardHeader>
-                  <div className={`text-4xl mb-4 ${feature.color}`}>{feature.icon}</div>
-                  <CardTitle className={`text-xl mb-4 ${feature.color}`}>{feature.title}</CardTitle>
-                  <CardDescription className="text-gray-400 group-hover:text-gray-600">
-                    {feature.description}
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            </Link>
+              <div className={`text-4xl mb-4 ${feature.color}`}>{feature.icon}</div>
+              <h3 className="text-xl font-semibold mb-2 text-white">{feature.title}</h3>
+              <p className="text-gray-400 text-sm">
+                {feature.description}
+              </p>
+            </div>
           ))}
         </div>
       </section>
 
-      {/* Consultation Section */}
       <section className="bg-[#1E1E1E] py-20 px-4 text-center text-white">
         <div className="max-w-3xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
@@ -246,7 +232,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Minor Features Section */}
       <section className="max-w-6xl mx-auto py-20 px-4 border-t border-white/10">
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
           Fitur-Fitur AlMasjid Digital
@@ -257,71 +242,68 @@ export default function Home() {
               title: 'Profil Masjid',
               description: 'Informasi detail tentang sejarah dan profil lengkap masjid.',
               icon: '🕌',
-              color: 'text-blue-400'
+              color: 'text-blue-400',
+              scrollTo: 'hero-section'
             },
             {
               title: 'Jadwal Pengajian',
               description: 'Informasi lengkap mengenai jadwal pengajian rutin maupun khusus.',
               icon: '📚',
-              color: 'text-orange-400'
+              color: 'text-orange-400',
+              scrollTo: 'prayer-times-section'
             },
             {
               title: 'Inventaris',
               description: 'Pencatatan dan manajemen inventaris masjid yang terstruktur.',
               icon: '📋',
-              color: 'text-green-400'
+              color: 'text-green-400',
+              scrollTo: 'hero-section'
             },
             {
               title: 'Dewan Pengurus',
               description: 'Informasi struktur dan susunan pengurus masjid.',
               icon: '👥',
-              color: 'text-purple-400'
+              color: 'text-purple-400',
+              scrollTo: 'hero-section'
             },
             {
               title: 'Laporan Wakaf',
               description: 'Transparansi pengelolaan dan pelaporan dana wakaf.',
               icon: '📊',
-              color: 'text-yellow-400'
+              color: 'text-yellow-400',
+              scrollTo: 'hero-section'
             },
             {
               title: 'Galeri Gambar',
               description: 'Dokumentasi kegiatan dan galeri foto masjid.',
               icon: '🖼️',
-              color: 'text-pink-400'
+              color: 'text-pink-400',
+              scrollTo: 'hero-section'
             },
             {
-              title: 'Artikel',
+              title: 'Tausiyah',
               description: 'Kumpulan artikel dan tulisan tentang keislaman dan kegiatan masjid.',
               icon: '📝',
-              color: 'text-emerald-400'
-            },
-            {
-              title: 'Reservasi',
-              description: 'Pemesanan fasilitas masjid dan pendaftaran kegiatan secara online.',
-              icon: '📅',
-              color: 'text-cyan-400'
+              color: 'text-emerald-400',
+              scrollTo: 'hero-section'
             },
             {
               title: 'Jadwal Sholat',
               description: 'Informasi jadwal sholat harian dan pengingat waktu sholat.',
               icon: '🕌',
-              color: 'text-amber-400'
+              color: 'text-amber-400',
+              scrollTo: 'prayer-times-section'
             }
           ].map((feature) => (
             <div 
               key={feature.title}
-              className={`bg-[#1E1E1E] p-6 rounded-lg ${feature.title === 'Jadwal Sholat' || feature.title === 'Profil Masjid' ? 'cursor-pointer hover:bg-white/10 transition-all duration-300' : ''}`}
-              onClick={feature.title === 'Jadwal Sholat' ? () => {
-                const prayerSection = document.getElementById('prayer-times-section');
-                if (prayerSection) {
-                  prayerSection.scrollIntoView({ behavior: 'smooth' });
+              className="bg-[#1E1E1E] p-6 rounded-lg cursor-pointer hover:bg-white/10 transition-all duration-300"
+              onClick={() => {
+                const section = document.getElementById(feature.scrollTo);
+                if (section) {
+                  section.scrollIntoView({ behavior: 'smooth' });
                 }
-              } : feature.title === 'Profil Masjid' ? () => {
-                const heroSection = document.getElementById('hero-section');
-                if (heroSection) {
-                  heroSection.scrollIntoView({ behavior: 'smooth' });
-                }
-              } : undefined}
+              }}
             >
               <div className={`text-4xl mb-4 ${feature.color}`}>{feature.icon}</div>
               <h3 className="text-xl font-semibold mb-2 text-white">{feature.title}</h3>
@@ -333,7 +315,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer with dark theme */}
       <footer className="border-t border-white/10 bg-[#0D0D0D] py-12">
         <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-8">
           <div>
@@ -341,7 +322,7 @@ export default function Home() {
             <ul className="space-y-2">
               <li><Link href="/dashboard" className="text-gray-400 hover:text-yellow-400 transition">Dashboard</Link></li>
               <li><Link href="/donasi" className="text-gray-400 hover:text-yellow-400 transition">Donasi Online</Link></li>
-              <li><Link href="/keuangan" className="text-gray-400 hover:text-yellow-400 transition">Financial</Link></li>
+              <li><Link href="/keuangan" className="text-gray-400 hover:text-yellow-400 transition">Keuangan</Link></li>
               <li><Link href="/kegiatan" className="text-gray-400 hover:text-yellow-400 transition">Kegiatan Masjid</Link></li>
             </ul>
           </div>
