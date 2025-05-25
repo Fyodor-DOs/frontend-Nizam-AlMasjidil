@@ -43,9 +43,12 @@ const Dashboard = () => {
   const [totalDonasi, setTotalDonasi] = useState<number>(0);
   const [totalSaldo, setTotalSaldo] = useState<number>(0);
   const [totalKegiatan, setTotalKegiatan] = useState<number>(0);
-  const [monthlyKeuanganData, setMonthlyKeuanganData] = useState<any[]>([]);
   const [totalJamaah, setTotalJamaah] = useState<number>(0);
   const [donasiChartData, setDonasiChartData] = useState<any[]>([]);
+  const [keuanganFilter, setKeuanganFilter] = useState('bulan');
+  const [donasiFilter, setDonasiFilter] = useState('bulan');
+  const [displayKeuanganData, setDisplayKeuanganData] = useState<any[]>([]);
+  const [displayDonasiData, setDisplayDonasiData] = useState<any[]>([]);
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
@@ -68,14 +71,12 @@ const Dashboard = () => {
       const keuanganData = keuanganResponse.data;
       setKeuanganData(keuanganData);
       calculateTotalSaldo(keuanganData);
-      processMonthlyKeuanganData(keuanganData);
 
       // Fetch donasi data
       const donasiResponse = await api.get('/donasi');
       const donasiData = donasiResponse.data;
       setDonasiData(donasiData);
       calculateTotalDonasi(donasiData);
-      processDonasiData(donasiData);
 
       // Fetch kegiatan data
       const kegiatanResponse = await api.get('/kegiatan');
@@ -121,50 +122,175 @@ const Dashboard = () => {
     setTotalDonasi(total);
   };
 
-  const processMonthlyKeuanganData = (data: any[]) => {
-    // Group data by month
-    const monthlyData = data.reduce((acc: any, item: any) => {
-      const date = new Date(item.tanggal);
-      const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      
-      if (!acc[monthYear]) {
-        acc[monthYear] = {
-          month: monthYear,
-          pemasukan: 0,
-          pengeluaran: 0
-        };
+  const processAndFormatKeuanganData = (data: any[], filter: string) => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0); // Normalize 'now' to the start of the day for consistent comparisons
+
+    let groupedData: any = {};
+    let dateFormat = '';
+    let sortFunc = (a: any, b: any) => a.key.localeCompare(b.key);
+
+    // Filter data based on the selected period
+    const filteredData = data.filter(item => {
+      const itemDate = new Date(item.tanggal);
+      itemDate.setHours(0, 0, 0, 0); // Normalize item date to the start of the day
+
+      switch (filter) {
+        case 'minggu':
+          const startOfWeek = new Date(now);
+          startOfWeek.setDate(now.getDate() - now.getDay()); // Set to start of current week (Sunday)
+          return itemDate >= startOfWeek && itemDate <= now;
+        case 'bulan':
+          const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          // For 'bulan', include all days in the current month up to the last day of the month
+          const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          endOfMonth.setHours(23, 59, 59, 999); // Set to end of the last day
+          return itemDate >= startOfMonth && itemDate <= endOfMonth;
+        case 'tahun':
+          const startOfYear = new Date(now.getFullYear(), 0, 1);
+           const endOfYear = new Date(now.getFullYear(), 11, 31);
+           endOfYear.setHours(23, 59, 59, 999);
+          return itemDate >= startOfYear && itemDate <= endOfYear;
+        default:
+           // Default to 'bulan' filter if none specified or recognized
+          const defaultStartOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          const defaultEndOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          defaultEndOfMonth.setHours(23, 59, 59, 999);
+          return itemDate >= defaultStartOfMonth && itemDate <= defaultEndOfMonth;
+      }
+    });
+
+    // Now process the filtered data based on the filter granularity
+    switch (filter) {
+      case 'minggu':
+        dateFormat = 'EEE'; // Abbreviated weekday name
+        // Order days of the week correctly (Mon to Sun for example, adjust if needed for locale)
+        const dayOrder = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']; // Abbreviated names
+        sortFunc = (a: any, b: any) => dayOrder.indexOf(a.key) - dayOrder.indexOf(b.key);
+         // Initialize all days of the week to 0
+         for(let i = 0; i < 7; i++){
+           const date = new Date(now);
+           date.setDate(now.getDate() - now.getDay() + i);
+           const key = date.toLocaleDateString('id-ID', { weekday: 'short' });
+           groupedData[key] = { key: key, pemasukan: 0, pengeluaran: 0 };
+         }
+        filteredData.forEach(item => {
+          const date = new Date(item.tanggal);
+          const key = date.toLocaleDateString('id-ID', { weekday: 'short' });
+           if (groupedData[key]) { // Ensure key exists (it should from initialization)
+             if (item.tipe_keuangan_id === 1) {
+               groupedData[key].pemasukan += parseFloat(item.jumlah);
+             } else if (item.tipe_keuangan_id === 2) {
+               groupedData[key].pengeluaran += parseFloat(item.jumlah);
+             }
+           }
+        });
+        break;
+      case 'bulan':
+        // Group by day of the month
+        sortFunc = (a: any, b: any) => parseInt(a.key) - parseInt(b.key);
+         // Initialize all days of the month to 0 for the current month
+         const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+         for(let i = 1; i <= daysInMonth; i++){
+           groupedData[i.toString()] = { key: i.toString(), pemasukan: 0, pengeluaran: 0 };
+         }
+        filteredData.forEach(item => {
+          const date = new Date(item.tanggal);
+          const key = date.getDate().toString(); // Day of the month as key
+           if (groupedData[key]) { // Ensure key exists
+             if (item.tipe_keuangan_id === 1) {
+               groupedData[key].pemasukan += parseFloat(item.jumlah);
+             } else if (item.tipe_keuangan_id === 2) {
+               groupedData[key].pengeluaran += parseFloat(item.jumlah);
+             }
+           }
+        });
+        break;
+      case 'tahun':
+        // Group by month
+        sortFunc = (a: any, b: any) => new Date(a.key + ' 1, ' + now.getFullYear()).getMonth() - new Date(b.key + ' 1, ' + now.getFullYear()).getMonth();
+         // Initialize all 12 months to 0
+         const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+         monthNames.forEach(month => {
+           groupedData[month] = { key: month, pemasukan: 0, pengeluaran: 0 };
+         });
+        filteredData.forEach(item => {
+          const date = new Date(item.tanggal);
+           const key = date.toLocaleDateString('id-ID', { month: 'long' });
+           if (groupedData[key]) { // Ensure key exists
+             if (item.tipe_keuangan_id === 1) {
+               groupedData[key].pemasukan += parseFloat(item.jumlah);
+             } else if (item.tipe_keuangan_id === 2) {
+               groupedData[key].pengeluaran += parseFloat(item.jumlah);
+             }
+           }
+        });
+        break;
+      default:
+        // Default processing if filter is not minggu, bulan, or tahun
+         const defaultMonthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+         defaultMonthNames.forEach(month => {
+           groupedData[month] = { key: month, pemasukan: 0, pengeluaran: 0 };
+         });
+          filteredData.forEach(item => {
+            const date = new Date(item.tanggal);
+            const key = date.toLocaleDateString('id-ID', { month: 'long' });
+             if (groupedData[key]) {
+               if (item.tipe_keuangan_id === 1) {
+                 groupedData[key].pemasukan += parseFloat(item.jumlah);
+               } else if (item.tipe_keuangan_id === 2) {
+                 groupedData[key].pengeluaran += parseFloat(item.jumlah);
+               }
+             }
+          });
+         sortFunc = (a: any, b: any) => new Date(a.key + ' 1, ' + now.getFullYear()).getMonth() - new Date(b.key + ' 1, ' + now.getFullYear()).getMonth();
+        break;
+
       }
 
-      if (item.tipe_keuangan_id === 1) {
-        acc[monthYear].pemasukan += parseFloat(item.jumlah);
-      } else if (item.tipe_keuangan_id === 2) {
-        acc[monthYear].pengeluaran += parseFloat(item.jumlah);
+      const formattedData = Object.values(groupedData).sort(sortFunc);
+      setDisplayKeuanganData(formattedData);
+    };
+
+   const processAndFormatDonasiData = (data: any[], filter: string) => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0); // Normalize 'now' to the start of the day for consistent comparisons
+
+    // Filter data based on the selected period
+    const filteredData = data.filter(item => {
+      const itemDate = new Date(item.tanggal);
+      itemDate.setHours(0, 0, 0, 0); // Normalize item date to the start of the day
+
+      switch (filter) {
+        case 'minggu':
+          const startOfWeek = new Date(now);
+          startOfWeek.setDate(now.getDate() - now.getDay());
+          return itemDate >= startOfWeek && itemDate <= now;
+        case 'bulan':
+          const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          endOfMonth.setHours(23, 59, 59, 999);
+          return itemDate >= startOfMonth && itemDate <= endOfMonth;
+        case 'tahun':
+          const startOfYear = new Date(now.getFullYear(), 0, 1);
+          const endOfYear = new Date(now.getFullYear(), 11, 31);
+          endOfYear.setHours(23, 59, 59, 999);
+          return itemDate >= startOfYear && itemDate <= endOfYear;
+        default:
+          // Default to 'bulan' filter
+          const defaultStartOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          const defaultEndOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          defaultEndOfMonth.setHours(23, 59, 59, 999);
+          return itemDate >= defaultStartOfMonth && itemDate <= defaultEndOfMonth;
       }
+    });
 
-      return acc;
-    }, {});
-
-    // Convert to array and sort by month
-    const sortedData = Object.values(monthlyData).sort((a: any, b: any) => 
-      a.month.localeCompare(b.month)
-    );
-
-    // Format month names
-    const formattedData = sortedData.map((item: any) => ({
-      ...item,
-      month: new Date(item.month + '-01').toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
-    }));
-
-    setMonthlyKeuanganData(formattedData);
-  };
-
-  const processDonasiData = (data: any[]) => {
-    // Group donations by payment method
-    const groupedData = data.reduce((acc: any, item: any) => {
+    // Group filtered data by payment method
+    const groupedData = filteredData.reduce((acc: any, item: any) => {
       const method = item.metode_pembayaran;
       if (!acc[method]) {
         acc[method] = {
-          metode_pembayaran: method,
+          metode_pembayaran: method, // Keep original key name for the pie chart label
           jumlah: 0
         };
       }
@@ -174,8 +300,20 @@ const Dashboard = () => {
 
     // Convert to array for the chart
     const chartData = Object.values(groupedData);
-    setDonasiChartData(chartData);
-  };
+    setDisplayDonasiData(chartData);
+   };
+
+  useEffect(() => {
+    if (keuanganData.length > 0) {
+      processAndFormatKeuanganData(keuanganData, keuanganFilter);
+    }
+  }, [keuanganFilter, keuanganData]);
+
+  useEffect(() => {
+    if (donasiData.length > 0) {
+      processAndFormatDonasiData(donasiData, donasiFilter);
+    }
+  }, [donasiFilter, donasiData]);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -207,7 +345,7 @@ const Dashboard = () => {
       <div className="h-20" />
 
       {/* Hero Image Carousel */}
-      <section className="relative h-[400px] w-full rounded-lg overflow-hidden shadow-xl mx-auto max-w-6xl mt-6">
+      <section className="relative h-[300px] w-full rounded-lg overflow-hidden shadow-xl mx-auto max-w-6xl mt-6 mb-8">
         {images.map((imageUrl, index) => (
           <div
             key={index}
@@ -216,8 +354,20 @@ const Dashboard = () => {
             }`}
             style={{ backgroundImage: `url('${imageUrl}')`, backgroundSize: 'cover', backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }}
           >
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-              <h2 className="text-4xl md:text-5xl font-extrabold text-yellow-400 text-center px-8 leading-tight tracking-wider drop-shadow-lg">Selamat Datang di <br /> AlMasjid Digital</h2>
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-between px-8">
+              <div>
+                <h2 className="text-4xl md:text-5xl font-extrabold text-yellow-400 leading-tight tracking-wider drop-shadow-lg">Selamat Datang di <br /> AlMasjid Digital</h2>
+              </div>
+              <div className="hidden md:flex items-center space-x-4">
+                <div className="bg-white/10 p-4 rounded-lg">
+                  <p className="text-gray-300 text-sm">Tanggal</p>
+                  <p className="text-white font-semibold">{new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                </div>
+                <div className="bg-white/10 p-4 rounded-lg">
+                  <p className="text-gray-300 text-sm">Waktu</p>
+                  <p className="text-white font-semibold">{new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+              </div>
             </div>
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50"></div>
           </div>
@@ -225,13 +375,13 @@ const Dashboard = () => {
       </section>
 
       {/* Quick Stats */}
-      <section className="w-full max-w-6xl mx-auto mt-8 px-6">
+      <section className="w-full max-w-6xl mx-auto mb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="bg-white/5 border-white/10">
-            <CardContent className="p-6">
+          <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer">
+            <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">Total Donasi</p>
+                  <p className="text-sm text-gray-300">Total Donasi</p>
                   <h3 className="text-2xl font-bold text-yellow-400">
                     Rp {totalDonasi.toLocaleString('id-ID')}
                   </h3>
@@ -243,11 +393,11 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/5 border-white/10">
-            <CardContent className="p-6">
+          <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer">
+            <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">Total Saldo</p>
+                  <p className="text-sm text-gray-300">Total Saldo</p>
                   <h3 className="text-2xl font-bold text-green-400">
                     Rp {totalSaldo.toLocaleString('id-ID')}
                   </h3>
@@ -259,11 +409,11 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/5 border-white/10">
-            <CardContent className="p-6">
+          <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer">
+            <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">Total Jamaah</p>
+                  <p className="text-sm text-gray-300">Total Jamaah</p>
                   <h3 className="text-2xl font-bold text-blue-400">{totalJamaah}</h3>
                 </div>
                 <div className="p-3 bg-blue-400/10 rounded-full">
@@ -273,11 +423,11 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/5 border-white/10">
-            <CardContent className="p-6">
+          <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer">
+            <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">Total Kegiatan</p>
+                  <p className="text-sm text-gray-300">Total Kegiatan</p>
                   <h3 className="text-2xl font-bold text-purple-400">{totalKegiatan}</h3>
                 </div>
                 <div className="p-3 bg-purple-400/10 rounded-full">
@@ -290,155 +440,219 @@ const Dashboard = () => {
       </section>
 
       {/* Charts Section */}
-      <section className="w-full max-w-6xl mx-auto mt-8 px-6">
-        <Tabs defaultValue="keuangan" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-white/5">
-            <TabsTrigger value="keuangan" className="data-[state=active]:bg-white/10">Keuangan</TabsTrigger>
-            <TabsTrigger value="donasi" className="data-[state=active]:bg-white/10">Donasi</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="keuangan">
-            <Card className="bg-white/5 border-white/10">
-              <CardHeader>
-                <CardTitle>Laporan Keuangan Bulanan</CardTitle>
-                <CardDescription>Grafik pemasukan dan pengeluaran masjid per bulan</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={monthlyKeuanganData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
-                      <XAxis dataKey="month" stroke="#ffffff80" />
-                      <YAxis stroke="#ffffff80" />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#1A1614',
-                          border: '1px solid #ffffff20',
-                          borderRadius: '8px'
-                        }}
-                      />
-                      <Bar dataKey="pemasukan" fill="#22C55E" name="Pemasukan" />
-                      <Bar dataKey="pengeluaran" fill="#EF4444" name="Pengeluaran" />
-                    </BarChart>
-                  </ResponsiveContainer>
+      <section className="w-full max-w-6xl mx-auto mb-8 ">
+        <div className="grid grid-cols-1 gap-6">
+          <Card className="bg-white/5 border-white/10">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-white">Laporan Keuangan</CardTitle>
+                  <CardDescription className="text-gray-300">Grafik pemasukan dan pengeluaran masjid</CardDescription>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="text-gray-300 hover:text-white">
+                      {keuanganFilter === 'minggu' ? 'Minggu Ini' :
+                       keuanganFilter === 'bulan' ? 'Bulan Ini' : 'Tahun Ini'}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-[#1E1E1E] border-white/10">
+                    <DropdownMenuItem
+                      className="text-gray-300 hover:bg-[#2A2A2A]"
+                      onClick={() => setKeuanganFilter('minggu')}
+                    >
+                      Minggu Ini
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-gray-300 hover:bg-[#2A2A2A]"
+                      onClick={() => setKeuanganFilter('bulan')}
+                    >
+                      Bulan Ini
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-gray-300 hover:bg-[#2A2A2A]"
+                      onClick={() => setKeuanganFilter('tahun')}
+                    >
+                      Tahun Ini
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={displayKeuanganData} barSize={35} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
+                    <XAxis
+                      dataKey="key"
+                      stroke="#ffffff"
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                      interval={0}
+                      tick={{ fontSize: 11 }}
+                    />
+                    <YAxis
+                      stroke="#ffffff"
+                      tickFormatter={(value) => `Rp ${value.toLocaleString('id-ID')}`}
+                      tick={{ fontSize: 11 }}
+                      width={120}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#2A2A2A',
+                        border: '1px solid #ffffff10',
+                        borderRadius: '8px',
+                        color: '#ffffff',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                      }}
+                      formatter={(value: number) => `Rp ${value.toLocaleString('id-ID')}`}
+                    />
+                    <Bar dataKey="pemasukan" fill="#22C55E" name="Pemasukan" radius={[4, 4, 0, 0]} activeBar={{ fill: '#3CB371' }} />
+                    <Bar dataKey="pengeluaran" fill="#EF4444" name="Pengeluaran" radius={[4, 4, 0, 0]} activeBar={{ fill: '#FA8072' }} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
 
-          <TabsContent value="donasi">
-            <Card className="bg-white/5 border-white/10">
-              <CardHeader>
-                <CardTitle>Distribusi Metode Pembayaran</CardTitle>
-                <CardDescription>Persentase metode pembayaran yang digunakan</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={donasiChartData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={150}
-                        fill="#8884d8"
-                        dataKey="jumlah"
-                        label={({ metode_pembayaran, percent }) => 
-                          `${metode_pembayaran.charAt(0).toUpperCase() + metode_pembayaran.slice(1)} ${(percent * 100).toFixed(0)}%`
-                        }
-                      >
-                        {donasiChartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#1A1614',
-                          border: '1px solid #ffffff20',
-                          borderRadius: '8px'
-                        }}
-                        formatter={(value: number) => `Rp ${value.toLocaleString('id-ID')}`}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+          <Card className="bg-white/5 border-white/10">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-white">Distribusi Donasi</CardTitle>
+                  <CardDescription className="text-gray-300">Metode pembayaran yang digunakan</CardDescription>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="text-gray-300 hover:text-white">
+                      {donasiFilter === 'minggu' ? 'Minggu Ini' :
+                       donasiFilter === 'bulan' ? 'Bulan Ini' : 'Tahun Ini'}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-[#1E1E1E] border-white/10">
+                    <DropdownMenuItem
+                      className="text-gray-300 hover:bg-[#2A2A2A]"
+                      onClick={() => setDonasiFilter('minggu')}
+                    >
+                      Minggu Ini
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-gray-300 hover:bg-[#2A2A2A]"
+                      onClick={() => setDonasiFilter('bulan')}
+                    >
+                      Bulan Ini
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-gray-300 hover:bg-[#2A2A2A]"
+                      onClick={() => setDonasiFilter('tahun')}
+                    >
+                      Tahun Ini
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={displayDonasiData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="jumlah"
+                      label={({ metode_pembayaran, percent }) =>
+                        `${metode_pembayaran.charAt(0).toUpperCase() + metode_pembayaran.slice(1)} ${(percent * 100).toFixed(0)}%`
+                      }
+                    >
+                      {displayDonasiData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#2A2A2A',
+                        border: '1px solid #ffffff10',
+                        borderRadius: '8px',
+                        color: '#ffffff',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                      }}
+                      formatter={(value: number) => `Rp ${value.toLocaleString('id-ID')}`}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </section>
 
-      {/* Kegiatan Carousel */}
-      <section className="w-full max-w-6xl mx-auto mt-8 px-6 mb-20">
-        <Card className="bg-white/5 border-white/10">
-          <CardHeader>
-            <CardTitle>Kegiatan Masjid</CardTitle>
-            <CardDescription>Jadwal dan informasi kegiatan terbaru</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="relative">
-              <div className="relative h-[400px] rounded-lg overflow-hidden">
-                {kegiatanData.map((kegiatan, index) => (
-                  <div
-                    key={kegiatan.id}
-                    className={`absolute inset-0 transition-opacity duration-500 ${
-                      index === currentKegiatanIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
-                    }`}
-                  >
-                    <div className="relative h-full">
-                      {kegiatan.gambar && (
-                        <Image
-                          src={`http://localhost:8000/storage/${kegiatan.gambar}`}
-                          alt={kegiatan.nama_kegiatan}
-                          fill
-                          className="object-cover"
-                        />
+      {/* Recent Activities and Upcoming Events */}
+      <section className="w-full max-w-6xl mx-auto mb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="bg-white/5 border-white/10">
+            <CardHeader>
+              <CardTitle className="text-white">Aktivitas Terbaru</CardTitle>
+              <CardDescription className="text-gray-300">Riwayat aktivitas terakhir</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[1, 2, 3, 4, 5].map((_, index) => (
+                  <div key={index} className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
+                    <div className={`p-2 rounded-full ${index % 2 === 0 ? 'bg-green-400/10' : 'bg-blue-400/10'}`}>
+                      {index % 2 === 0 ? (
+                        <DollarSign className="h-4 w-4 text-green-400" />
+                      ) : (
+                        <Users className="h-4 w-4 text-blue-400" />
                       )}
-                      <div className="absolute inset-0 bg-black/60 flex items-center">
-                        <div className="w-full max-w-2xl mx-auto px-6">
-                          <h3 className="text-3xl font-bold text-yellow-400 mb-4">{kegiatan.nama_kegiatan}</h3>
-                          <p className="text-lg text-gray-200 mb-4">{kegiatan.deskripsi}</p>
-                          <p className="text-sm text-gray-400 flex items-center">
-                            <Calendar className="h-4 w-4 mr-2" />
-                            {kegiatan.tanggal} - {kegiatan.waktu}
-                          </p>
-                        </div>
-                      </div>
                     </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-white">
+                        {index % 2 === 0 ? 'Donasi baru diterima' : 'Jamaah baru mendaftar'}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {index % 2 === 0 ? 'Rp 500.000' : 'Ahmad Fadillah'}
+                      </p>
+                    </div>
+                    <span className="text-xs text-gray-400">
+                      {index === 0 ? 'Baru saja' : `${index} jam yang lalu`}
+                    </span>
                   </div>
                 ))}
               </div>
-              
-              {/* Navigation Buttons */}
-              <button
-                onClick={prevKegiatan}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full z-20 transition-colors"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </button>
-              <button
-                onClick={nextKegiatan}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full z-20 transition-colors"
-              >
-                <ChevronRight className="h-6 w-6" />
-              </button>
+            </CardContent>
+          </Card>
 
-              {/* Dots Indicator */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-20">
-                {kegiatanData.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentKegiatanIndex(index)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      index === currentKegiatanIndex ? 'bg-yellow-400' : 'bg-white/50'
-                    }`}
-                  />
+          <Card className="bg-white/5 border-white/10">
+            <CardHeader>
+              <CardTitle className="text-white">Kegiatan Mendatang</CardTitle>
+              <CardDescription className="text-gray-300">Jadwal kegiatan terdekat</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {kegiatanData.slice(0, 5).map((kegiatan, index) => (
+                  <div key={kegiatan.id} className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
+                    <div className="p-2 rounded-full bg-purple-400/10">
+                      <Calendar className="h-4 w-4 text-purple-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-white">{kegiatan.nama_kegiatan}</p>
+                      <p className="text-xs text-gray-400 mt-1">{kegiatan.tanggal} - {kegiatan.waktu}</p>
+                    </div>
+                    <span className="text-xs text-gray-400">
+                      {index === 0 ? 'Hari ini' : `${index} hari lagi`}
+                    </span>
+                  </div>
                 ))}
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </section>
 
       {/* Footer */}

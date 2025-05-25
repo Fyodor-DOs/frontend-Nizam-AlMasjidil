@@ -40,7 +40,7 @@ const Navbar = ({ role, user }: NavbarProps) => {
     <>
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#1A1614]/80 backdrop-blur-sm border-b border-white/10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/" className="flex items-center gap-2 text-xl font-bold text-white">
+          <Link href="/dashboard" className="flex items-center gap-2 text-xl font-bold text-white">
             <Image
               src="/images/logo_textless.png"
               alt="AlMasjid Digital Logo"
