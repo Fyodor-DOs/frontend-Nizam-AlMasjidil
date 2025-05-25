@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api, { setAuthToken } from '@/utils/api';
+import Navbar from '@/components/Navbar'; 
+
 
 const images = [
   '/images/masjid6.jpg'
@@ -15,6 +17,8 @@ const Donasi = () => {
   });
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [user, setUser] = useState(null);
+  const [role, setRole] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -61,9 +65,11 @@ const Donasi = () => {
       }
     }
   };
+  
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#1A1614] pt-15">
+      <Navbar role={role} user={user}/>
       {/* Banner */}
       <div className="relative h-64 w-full">
         <img
@@ -78,8 +84,8 @@ const Donasi = () => {
   
       {/* Deskripsi */}
       <div className="max-w-3xl mx-auto px-6 py-10 text-center">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Bersama Kita Bangun Kebaikan</h2>
-        <p className="text-gray-600 text-md leading-relaxed">
+        <h2 className="text-2xl font-semibold text-white mb-4">Bersama Kita Bangun Kebaikan</h2>
+        <p className="text-white text-md leading-relaxed">
           Salurkan donasi terbaik Anda untuk mendukung kegiatan dakwah, pendidikan, dan sosial yang diselenggarakan oleh masjid.
         </p>
       </div>
