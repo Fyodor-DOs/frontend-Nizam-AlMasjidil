@@ -285,7 +285,8 @@ export default function Home() {
               description: 'Kumpulan artikel dan tulisan tentang keislaman dan kegiatan masjid.',
               icon: '📝',
               color: 'text-emerald-400',
-              scrollTo: 'hero-section'
+              scrollTo: 'hero-section',
+              link: '/tausiyah'
             },
             {
               title: 'Jadwal Sholat',
@@ -299,9 +300,13 @@ export default function Home() {
               key={feature.title}
               className="bg-[#1E1E1E] p-6 rounded-lg cursor-pointer hover:bg-white/10 transition-all duration-300"
               onClick={() => {
-                const section = document.getElementById(feature.scrollTo);
-                if (section) {
-                  section.scrollIntoView({ behavior: 'smooth' });
+                if (feature.link) {
+                  router.push(feature.link);
+                } else {
+                  const section = document.getElementById(feature.scrollTo);
+                  if (section) {
+                    section.scrollIntoView({ behavior: 'smooth' });
+                  }
                 }
               }}
             >
