@@ -3,12 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api, { setAuthToken } from '@/utils/api';
-import Navbar from '@/components/Navbar'; 
+import Navbar from '@/components/Navbar';
 
-
-const images = [
-  '/images/masjid6.jpg'
-];
+interface User {
+  id: number;
+  nama: string;
+  email: string;
+  role: string;
+}
 
 const Donasi = () => {
   const [formData, setFormData] = useState({
@@ -17,8 +19,9 @@ const Donasi = () => {
   });
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-    const [user, setUser] = useState(null);
-  const [role, setRole] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [role, setRole] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -39,7 +42,6 @@ const Donasi = () => {
       setUser(response.data);
     } catch (err) {
       console.error('Error fetching user data:', err);
-      setError('Gagal mengambil data user');
     }
   };
 
@@ -56,6 +58,7 @@ const Donasi = () => {
     setSuccessMessage(null);
 
     try {
+      setIsLoading(true);
       await api.post('/donasi', {
         jumlah: parseInt(formData.jumlah),
         metode_pembayaran: formData.metode_pembayaran,
@@ -76,25 +79,27 @@ const Donasi = () => {
       } else {
         setError('Terjadi kesalahan.');
       }
+    } finally {
+      setIsLoading(false);
     }
   };
-  
 
   return (
     <div className="min-h-screen bg-[#1A1614] pt-15">
       <Navbar role={role} user={user}/>
+      
       {/* Banner */}
       <div className="relative h-64 w-full">
         <img
           src="/images/masjid7.jpg"
           alt="Banner Donasi"
-          className=" w-full h-full object-cover"
+          className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 flex items-center justify-center">
           <h1 className="text-white text-3xl md:text-4xl font-bold">Donasi untuk Masjid</h1>
         </div>
       </div>
-  
+
       {/* Deskripsi */}
       <div className="max-w-3xl mx-auto px-6 py-10 text-center">
         <h2 className="text-2xl font-semibold text-white mb-4">Bersama Kita Bangun Kebaikan</h2>
@@ -102,69 +107,76 @@ const Donasi = () => {
           Salurkan donasi terbaik Anda untuk mendukung kegiatan dakwah, pendidikan, dan sosial yang diselenggarakan oleh masjid.
         </p>
       </div>
-  
-      {/* Form Donasi */}
-      <div className="max-w-xl mx-auto bg-gray-50 rounded-xl shadow-md p-8">
-        {error && (
-          <p className="mb-4 p-3 text-sm text-red-600 bg-red-100 rounded">
-            {error}
-          </p>
-        )}
-        {successMessage && (
-          <p className="mb-4 p-3 text-sm text-green-700 bg-green-100 rounded">
-            {successMessage}
-          </p>
-        )}
-  
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block mb-1 font-medium text-gray-700">Jumlah Donasi (Rp)</label>
-            <input
-              type="number"
-              name="jumlah"
-              value={formData.jumlah}
-              onChange={handleChange}
-              placeholder="Contoh: 50000"
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500 placeholder-gray-300 text-black"
-              required
-            />
+
+      {/* Container */}
+      <div className="max-w-xl mx-auto px-4 pb-10">
+        <div className="bg-black rounded-2xl shadow-2xl overflow-hidden">
+          <div className="bg-yellow-400 text-black py-4 px-6 text-center font-bold text-lg">
+            Form Donasi
           </div>
-  
-          <div>
-            <label className="block mb-1 font-medium text-gray-700">Metode Pembayaran</label>
-            <select
-              name="metode_pembayaran"
-              value={formData.metode_pembayaran}
-              onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500 placeholder-gray-300"
-              required
+
+          <div className="p-6">
+            {error && (
+              <div className="mb-4 p-3 bg-red-500/10 border border-red-500 rounded text-red-500 text-center">
+                {error}
+              </div>
+            )}
+            {successMessage && (
+              <div className="mb-4 p-3 bg-green-500/10 border border-green-500 rounded text-green-500 text-center">
+                {successMessage}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block mb-1 font-medium text-gray-300">Jumlah Donasi (Rp)</label>
+                <input
+                  type="number"
+                  name="jumlah"
+                  value={formData.jumlah}
+                  onChange={handleChange}
+                  placeholder="Contoh: 50000"
+                  className="w-full p-3 border border-gray-600 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1 font-medium text-gray-300">Metode Pembayaran</label>
+                <select
+                  name="metode_pembayaran"
+                  value={formData.metode_pembayaran}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-600 rounded-md bg-gray-800 text-white focus:ring-yellow-500 focus:border-yellow-500"
+                  required
+                >
+                  <option value="">Pilih metode</option>
+                  <option value="transfer">Transfer Bank</option>
+                  <option value="tunai">Tunai</option>
+                  <option value="e-wallet">E-Wallet</option>
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 rounded-md transition disabled:opacity-50"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Mengirim...' : 'Donasi Sekarang'}
+              </button>
+            </form>
+
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="mt-4 text-sm text-yellow-600 hover:underline block text-center"
             >
-              <option value="">Pilih metode</option>
-              <option value="transfer">Transfer Bank</option>
-              <option value="tunai">Tunai</option>
-              <option value="e-wallet">E-Wallet</option>
-            </select>
+              ← Kembali ke Dashboard
+            </button>
           </div>
-  
-          <button
-            type="submit"
-            className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 rounded-md transition"
-          >
-            Donasi Sekarang
-          </button>
-        </form>
-  
-        <div className="text-center mt-6">
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="text-sm text-yellow-600 hover:underline"
-          >
-            ← Kembali ke Dashboard
-          </button>
         </div>
       </div>
     </div>
-  );  
+  );
 };
 
 export default Donasi;
