@@ -12,8 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"; // Assuming Button component is styled consistently
 
+// --- Type Definitions (Kept as is, good practice) ---
 type Kegiatan = {
   id: number;
   nama_kegiatan: string;
@@ -24,13 +25,21 @@ type Kegiatan = {
   gambar?: string;
 };
 
+interface User {
+  id: number;
+  nama: string;
+  email: string;
+  role: string;
+}
+// --- End Type Definitions ---
+
 const KegiatanPage = () => {
   const [kegiatanList, setKegiatanList] = useState<Kegiatan[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedKegiatan, setSelectedKegiatan] = useState<Kegiatan | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [formData, setFormData] = useState({
     nama_kegiatan: '',
     deskripsi: '',
@@ -45,6 +54,19 @@ const KegiatanPage = () => {
 
   const router = useRouter();
 
+  // --- Effects (Kept similar, good logic) ---
+  useEffect(() => {
+    if (showModal || selectedKegiatan || showDeleteDialog) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showModal, selectedKegiatan, showDeleteDialog]);
+
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     const role = localStorage.getItem('role');
@@ -57,7 +79,9 @@ const KegiatanPage = () => {
       router.push('/login');
     }
   }, [router]);
+  // --- End Effects ---
 
+  // --- Data Fetching & Handlers (Minor adjustments for clarity) ---
   const fetchUserData = async () => {
     try {
       const response = await api.get('/user');
@@ -75,7 +99,7 @@ const KegiatanPage = () => {
       setKegiatanList(response.data);
     } catch (err: any) {
       console.error('Fetch Kegiatan Error:', err);
-      setError('Gagal mengambil data kegiatan');
+      setError('Gagal mengambil data kegiatan. Silakan coba lagi nanti.');
     } finally {
       setIsLoading(false);
     }
@@ -89,7 +113,7 @@ const KegiatanPage = () => {
 
     const { nama_kegiatan, deskripsi, tanggal, waktu, lokasi } = formData;
     if (!nama_kegiatan || !deskripsi || !tanggal || !waktu || !lokasi) {
-      setError('Semua field harus diisi!');
+      setError('Mohon lengkapi semua field yang wajib diisi.');
       return;
     }
 
@@ -122,9 +146,9 @@ const KegiatanPage = () => {
       setGambar(null);
       setSelectedKegiatan(null);
       fetchKegiatan();
-    } catch (err) {
-      console.error('Error:', err);
-      setError(editMode ? 'Gagal mengedit kegiatan' : 'Gagal menambah kegiatan');
+    } catch (err: any) {
+      console.error('Error during save/update:', err);
+      setError(err?.response?.data?.message || (editMode ? 'Gagal mengedit kegiatan. Coba periksa input Anda.' : 'Gagal menambah kegiatan. Silakan coba lagi.'));
     } finally {
       setIsLoading(false);
     }
@@ -136,7 +160,7 @@ const KegiatanPage = () => {
 
   const handleDeleteKegiatan = async (id: number) => {
     if (userRole !== 'admin' && userRole !== 'takmir') {
-      setError('Anda tidak memiliki izin untuk menghapus kegiatan.');
+      setError('Anda tidak memiliki izin untuk menghapus kegiatan ini.');
       return;
     }
 
@@ -147,9 +171,9 @@ const KegiatanPage = () => {
       setSelectedKegiatan(null);
       setShowDeleteDialog(false);
       fetchKegiatan();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Gagal menghapus kegiatan:', err);
-      setError('Gagal menghapus kegiatan');
+      setError(err?.response?.data?.message || 'Gagal menghapus kegiatan. Terjadi kesalahan server.');
     } finally {
       setIsLoading(false);
     }
@@ -166,94 +190,146 @@ const KegiatanPage = () => {
     });
     setEditMode(true);
     setShowModal(true);
-    setSelectedKegiatan(null);
+    setSelectedKegiatan(null); // Close detail modal when opening edit modal
   };
+  // --- End Data Fetching & Handlers ---
 
   return (
-    <div className="min-h-screen bg-[#1A1614] pt-15">
-      <Navbar role={userRole} user={user}/>
-      
-      {/* Banner */}
-      <div className="relative h-64 w-full">
+    <div className="min-h-screen bg-[#1A1614] text-white flex flex-col">
+      <Navbar role={userRole} user={user} />
+
+      {/* Hero Section (Banner) */}
+      <section className="relative h-96 md:h-[500px] w-full flex items-center justify-center overflow-hidden">
         <img
           src="/images/masjid7.jpg"
-          alt="Banner Kegiatan"
-          className="w-full h-full object-cover"
+          alt="Masjid"
+          className="absolute inset-0 w-full h-full object-cover object-center opacity-40"
         />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <h1 className="text-white text-3xl md:text-4xl font-bold">Kegiatan Masjid</h1>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#1A1614] via-[#1A1614]/60 to-transparent"></div>
+        <div className="relative z-10 text-center p-4 max-w-4xl mx-auto">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold leading-tight text-white drop-shadow-2xl animate-fade-in-down">
+            Jadwal Kegiatan Masjid
+          </h1>
+          <p className="mt-4 text-lg sm:text-xl md:text-2xl font-light text-gray-200 animate-fade-in-up">
+            Ikuti berbagai program dan acara Islami di masjid kami.
+          </p>
         </div>
-      </div>
+      </section>
 
-      {/* Deskripsi */}
-      <div className="max-w-3xl mx-auto px-6 py-10 text-center">
-        <h2 className="text-2xl font-semibold text-white mb-4">Jadwal Kegiatan Masjid</h2>
-        <p className="text-white text-md leading-relaxed">
-          Informasi lengkap tentang kegiatan-kegiatan yang akan diselenggarakan di masjid.
-        </p>
-      </div>
+      {/* Main Content - Description and Kegiatan List */}
+      {/* Changed `items-start` to `items-stretch` and added `relative` to main for proper positioning */}
+      <main className="container mx-auto px-4 md:px-8 py-16 flex flex-col lg:flex-row gap-12 lg:gap-16 items-stretch flex-grow relative">
+        {/* Description Section - Removed sticky, added flex and grow */}
+        <section className="w-full lg:w-2/5 text-center lg:text-left flex flex-col justify-between">
+          <div> {/* This div wraps the text content */}
+            <h2 className="text-3xl sm:text-4xl font-bold mb-6 text-yellow-400">
+              Semarakkan Syiar Islam
+            </h2>
+            <p className="text-base sm:text-lg leading-relaxed mb-6 text-gray-300">
+              Halaman ini adalah pusat informasi untuk semua kegiatan masjid, mulai dari kajian rutin, pengajian akbar, hingga acara sosial dan peringatan hari besar Islam. Pastikan Anda tidak melewatkan kesempatan untuk memperdalam ilmu agama dan mempererat tali silaturahmi.
+            </p>
+            <ul className="list-disc list-inside text-base sm:text-lg space-y-3 mb-8 text-gray-300">
+              <li><strong className="text-yellow-300">Kajian Rutin:</strong> Jadwal tetap untuk memperdalam pemahaman agama.</li>
+              <li><strong className="text-yellow-300">Acara Spesial:</strong> Peringatan hari besar dan program tematik.</li>
+              <li><strong className="text-yellow-300">Kegiatan Sosial:</strong> Bakti sosial, santunan, dan program kemasyarakatan.</li>
+              <li><strong className="text-yellow-300">Informasi Detail:</strong> Waktu, lokasi, dan deskripsi lengkap setiap kegiatan.</li>
+            </ul>
+            <p className="text-lg sm:text-xl leading-relaxed font-semibold text-yellow-300">
+              Bergabunglah dengan kami dalam setiap langkah menuju kebaikan.
+            </p>
+          </div>
+          {/* "Kembali ke Beranda" Button moved inside this section */}
+          {/* Added mt-auto to push it to the bottom of the flex container */}
+          <div className="text-center py-12 bg-[#1A1614] lg:pt-0 lg:pb-0 lg:mt-auto">
+            <Button
+              onClick={() => router.push('/dashboard')}
+              className="bg-yellow-400 text-black font-bold py-3 px-8 rounded-full hover:bg-yellow-500 transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-lg"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z" />
+              </svg>
+              Kembali ke Beranda
+            </Button>
+          </div>
+        </section>
 
-      {/* Container */}
-      <div className="max-w-4xl mx-auto px-4 pb-10">
-        <div className="bg-black rounded-2xl shadow-2xl overflow-hidden">
-          <div className="bg-yellow-400 text-black py-4 px-6 text-center font-bold text-lg relative">
-            Daftar Kegiatan
+        {/* Kegiatan List Section */}
+        <section className="w-full lg:w-3/5 bg-black rounded-2xl shadow-2xl overflow-hidden border border-gray-800">
+          <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-black py-5 px-6 flex justify-between items-center relative">
+            <h3 className="font-extrabold text-xl sm:text-2xl">Daftar Kegiatan Terbaru</h3>
             {(userRole === 'admin' || userRole === 'takmir') && (
-              <button
+              <Button
                 onClick={() => {
                   setShowModal(true);
                   setEditMode(false);
                   setFormData({ nama_kegiatan: '', deskripsi: '', tanggal: '', waktu: '', lokasi: '' });
                   setGambar(null);
+                  setError(null);
                 }}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded text-sm"
+                className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-transform transform hover:scale-105 shadow-md"
               >
-                Tambah
-              </button>
+                Tambah Kegiatan
+              </Button>
             )}
           </div>
 
-          <div className="p-6">
+          <div className="p-6 sm:p-8">
             {error && (
-              <div className="mb-4 p-3 bg-red-500/10 border border-red-500 rounded text-red-500 text-center">
+              <div className="mb-6 p-4 bg-red-600/20 border border-red-500 rounded-lg text-red-400 text-center text-sm font-medium animate-fade-in">
                 {error}
               </div>
             )}
 
             {isLoading ? (
-              <div className="text-center py-8">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-yellow-400 border-t-transparent"></div>
-                <p className="mt-2 text-gray-400">Memuat data...</p>
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-yellow-400 border-t-transparent"></div>
+                <p className="mt-6 text-gray-400 text-xl">Memuat daftar kegiatan...</p>
               </div>
             ) : kegiatanList.length === 0 ? (
-              <p className="text-center text-gray-400 py-8">Belum ada kegiatan yang tersedia.</p>
+              <div className="text-center py-12">
+                <p className="text-gray-400 text-xl">Belum ada kegiatan yang tersedia saat ini.</p>
+                {(userRole === 'admin' || userRole === 'takmir') && (
+                  <p className="mt-4 text-gray-500 text-md">Gunakan tombol "Tambah Kegiatan" untuk mulai menambahkan.</p>
+                )}
+              </div>
             ) : (
-              <div className="grid gap-4">
+              <div className="grid gap-8">
                 {kegiatanList.map((item) => (
                   <div
                     key={item.id}
                     onClick={() => handleShowDetail(item)}
-                    className="flex items-start gap-4 p-4 border border-gray-700 rounded-lg shadow-sm bg-[#1A1614] text-white cursor-pointer hover:bg-[#2a2421] transition"
+                    className="flex flex-col sm:flex-row items-start gap-6 p-6 border border-gray-700 rounded-xl shadow-lg bg-[#1A1614] text-white cursor-pointer hover:bg-[#2a2421] transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-2xl"
                   >
                     {item.gambar && (
-                      <img
-                        src={`http://localhost:8000/storage/${item.gambar}`}
-                        alt={item.nama_kegiatan}
-                        className="w-40 h-32 object-cover rounded"
-                      />
+                      <div className="flex-shrink-0 w-full sm:w-48 h-40 sm:h-36 overflow-hidden rounded-lg">
+                        <img
+                          src={`http://localhost:8000/storage/${item.gambar}`}
+                          alt={item.nama_kegiatan}
+                          className="w-full h-full object-cover transform hover:scale-110 transition-transform duration-500 ease-in-out"
+                        />
+                      </div>
                     )}
-                    <div className="flex-1">
-                      <h2 className="text-xl font-bold text-yellow-400 mb-2">{item.nama_kegiatan}</h2>
-                      <p className="text-gray-300 mb-3 line-clamp-2">{item.deskripsi}</p>
-                      <div className="flex flex-wrap gap-4 text-sm text-gray-400">
-                        <div className="flex items-center gap-1">
-                          <span className="text-yellow-400">Tanggal:</span> {item.tanggal}
+                    <div className="flex-1 w-full">
+                      <h3 className="text-xl sm:text-2xl font-bold text-yellow-400 mb-2 leading-tight">{item.nama_kegiatan}</h3>
+                      <p className="text-gray-300 mb-4 line-clamp-3 leading-relaxed">{item.deskripsi}</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-y-2 gap-x-4 text-sm text-gray-400">
+                        <div className="flex items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                          </svg>
+                          <span className="font-semibold text-yellow-400">Tanggal:</span> {item.tanggal}
                         </div>
-                        <div className="flex items-center gap-1">
-                          <span className="text-yellow-400">Waktu:</span> {item.waktu}
+                        <div className="flex items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L11 9.586V6z" clipRule="evenodd" />
+                          </svg>
+                          <span className="font-semibold text-yellow-400">Waktu:</span> {item.waktu}
                         </div>
-                        <div className="flex items-center gap-1">
-                          <span className="text-yellow-400">Lokasi:</span> {item.lokasi}
+                        <div className="flex items-center gap-2 col-span-full"> {/* Span full width for location */}
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                          </svg>
+                          <span className="font-semibold text-yellow-400">Lokasi:</span> {item.lokasi}
                         </div>
                       </div>
                     </div>
@@ -261,165 +337,197 @@ const KegiatanPage = () => {
                 ))}
               </div>
             )}
-
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="mt-6 text-sm text-yellow-600 hover:underline block text-center"
-            >
-              ← Kembali ke Dashboard
-            </button>
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
+
+      {/* The rest of your modals remain outside the main content flow */}
 
       {/* Modal Tambah / Edit */}
       {showModal && (userRole === 'admin' || userRole === 'takmir') && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="border border-gray-700 bg-[#1A1614] p-6 rounded-lg shadow-2xl w-full max-w-md text-white">
-            <h2 className="text-2xl font-bold mb-6 text-center text-yellow-400">
-              {editMode ? 'Edit Kegiatan' : 'Buat Kegiatan'}
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="border border-gray-700 bg-[#1A1614] p-8 rounded-xl shadow-2xl w-full max-w-lg text-white transform scale-95 animate-scale-up-center transition-transform duration-300">
+            <h2 className="text-3xl font-bold mb-8 text-center text-yellow-400">
+              {editMode ? 'Edit Kegiatan' : 'Buat Kegiatan Baru'}
             </h2>
-            <div className="space-y-4">
+            {error && (
+              <div className="mb-6 p-4 bg-red-600/20 border border-red-500 rounded-lg text-red-400 text-center text-sm font-medium">
+                {error}
+              </div>
+            )}
+            <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); handleCreateOrUpdateKegiatan(); }}>
               <div>
-                <label className="block mb-1 font-medium text-gray-300">Nama Kegiatan</label>
+                <label htmlFor="nama_kegiatan" className="block mb-2 font-semibold text-gray-300 text-lg">Nama Kegiatan</label>
                 <input
                   type="text"
-                  placeholder="Nama Kegiatan"
+                  id="nama_kegiatan"
+                  placeholder="Contoh: Kajian Fiqih Subuh"
                   value={formData.nama_kegiatan}
                   onChange={(e) => setFormData({ ...formData, nama_kegiatan: e.target.value })}
-                  className="w-full p-3 border border-gray-600 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500"
+                  className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 text-lg outline-none transition duration-200"
+                  required
                 />
               </div>
               <div>
-                <label className="block mb-1 font-medium text-gray-300">Deskripsi</label>
+                <label htmlFor="deskripsi" className="block mb-2 font-semibold text-gray-300 text-lg">Deskripsi</label>
                 <textarea
-                  placeholder="Deskripsi"
+                  id="deskripsi"
+                  placeholder="Berikan deskripsi lengkap tentang kegiatan ini..."
                   value={formData.deskripsi}
                   onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
-                  className="w-full p-3 border border-gray-600 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500"
+                  className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 h-36 text-lg outline-none transition duration-200 resize-y"
+                  required
                 />
               </div>
-              <div>
-                <label className="block mb-1 font-medium text-gray-300">Tanggal</label>
-                <input
-                  type="date"
-                  value={formData.tanggal}
-                  onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })}
-                  className="w-full p-3 border border-gray-600 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="tanggal" className="block mb-2 font-semibold text-gray-300 text-lg">Tanggal</label>
+                  <input
+                    type="date"
+                    id="tanggal"
+                    value={formData.tanggal}
+                    onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })}
+                    className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white focus:ring-yellow-500 focus:border-yellow-500 text-lg outline-none transition duration-200"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="waktu" className="block mb-2 font-semibold text-gray-300 text-lg">Waktu</label>
+                  <input
+                    type="time"
+                    id="waktu"
+                    value={formData.waktu}
+                    onChange={(e) => setFormData({ ...formData, waktu: e.target.value })}
+                    className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white focus:ring-yellow-500 focus:border-yellow-500 text-lg outline-none transition duration-200"
+                    required
+                  />
+                </div>
               </div>
               <div>
-                <label className="block mb-1 font-medium text-gray-300">Waktu</label>
-                <input
-                  type="time"
-                  value={formData.waktu}
-                  onChange={(e) => setFormData({ ...formData, waktu: e.target.value })}
-                  className="w-full p-3 border border-gray-600 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500"
-                />
-              </div>
-              <div>
-                <label className="block mb-1 font-medium text-gray-300">Lokasi</label>
+                <label htmlFor="lokasi" className="block mb-2 font-semibold text-gray-300 text-lg">Lokasi</label>
                 <input
                   type="text"
-                  placeholder="Lokasi"
+                  id="lokasi"
+                  placeholder="Contoh: Ruang Utama Masjid Al-Hikmah"
                   value={formData.lokasi}
                   onChange={(e) => setFormData({ ...formData, lokasi: e.target.value })}
-                  className="w-full p-3 border border-gray-600 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500"
+                  className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 text-lg outline-none transition duration-200"
+                  required
                 />
               </div>
               <div>
-                <label className="block mb-1 font-medium text-gray-300">Gambar</label>
+                <label htmlFor="gambar" className="block mb-2 font-semibold text-gray-300 text-lg">Gambar (Opsional)</label>
                 <input
                   type="file"
+                  id="gambar"
                   accept="image/*"
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
                       setGambar(e.target.files[0]);
                     }
                   }}
-                  className="w-full p-3 border border-gray-600 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500"
+                  className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-500 file:text-black hover:file:bg-yellow-600 focus:ring-yellow-500 focus:border-yellow-500 cursor-pointer outline-none transition duration-200"
                 />
+                {editMode && selectedKegiatan?.gambar && !gambar && (
+                  <p className="mt-2 text-sm text-gray-400">Gambar saat ini: <span className="italic">{selectedKegiatan.gambar.split('/').pop()}</span></p>
+                )}
+                {gambar && (
+                  <p className="mt-2 text-sm text-gray-400">Gambar baru dipilih: <span className="italic">{gambar.name}</span></p>
+                )}
               </div>
-            </div>
 
-            <div className="flex justify-end space-x-3 mt-8">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setShowModal(false);
-                  setEditMode(false);
-                }}
-                className="text-gray-300 hover:text-white hover:bg-white/10"
-                disabled={isLoading}
-              >
-                Batal
-              </Button>
-              <Button
-                onClick={handleCreateOrUpdateKegiatan}
-                className="bg-yellow-500 hover:bg-yellow-600 text-white disabled:opacity-50"
-                disabled={isLoading}
-              >
-                {isLoading ? 'Menyimpan...' : 'Simpan'}
-              </Button>
-            </div>
+              <div className="flex justify-end space-x-4 pt-4">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setShowModal(false);
+                    setEditMode(false);
+                    setFormData({ nama_kegiatan: '', deskripsi: '', tanggal: '', waktu: '', lokasi: '' });
+                    setGambar(null);
+                    setError(null);
+                  }}
+                  className="px-7 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200"
+                  disabled={isLoading}
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  className="px-7 py-3 bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5 text-gray-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    editMode ? 'Simpan Perubahan' : 'Buat Kegiatan'
+                  )}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
       {/* Modal Detail */}
       {selectedKegiatan && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="border border-gray-700 bg-[#1A1614] p-6 rounded-lg shadow-2xl w-full max-w-md text-white">
-            <h2 className="text-2xl font-bold mb-4 text-center text-yellow-400">{selectedKegiatan.nama_kegiatan}</h2>
-            <div className="space-y-4">
-              <div>
-                <span className="text-yellow-400 font-medium">Deskripsi:</span>
-                <p className="text-gray-300 mt-1">{selectedKegiatan.deskripsi}</p>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="border border-gray-700 bg-[#1A1614] p-8 rounded-xl shadow-2xl w-full max-w-lg text-white transform scale-95 animate-scale-up-center transition-transform duration-300">
+            <h2 className="text-3xl font-bold mb-6 text-center text-yellow-400">{selectedKegiatan.nama_kegiatan}</h2>
+            {selectedKegiatan.gambar && (
+              <div className="mb-6 rounded-lg overflow-hidden border border-gray-700">
+                <img
+                  src={`http://localhost:8000/storage/${selectedKegiatan.gambar}`}
+                  alt={selectedKegiatan.nama_kegiatan}
+                  className="w-full h-64 object-cover object-center"
+                />
               </div>
+            )}
+            <div className="space-y-4 text-lg">
               <div>
-                <span className="text-yellow-400 font-medium">Tanggal:</span>
-                <p className="text-gray-300 mt-1">{selectedKegiatan.tanggal}</p>
+                <span className="text-yellow-400 font-bold">Deskripsi:</span>
+                <p className="text-gray-300 mt-2 leading-relaxed">{selectedKegiatan.deskripsi}</p>
               </div>
-              <div>
-                <span className="text-yellow-400 font-medium">Waktu:</span>
-                <p className="text-gray-300 mt-1">{selectedKegiatan.waktu}</p>
-              </div>
-              <div>
-                <span className="text-yellow-400 font-medium">Lokasi:</span>
-                <p className="text-gray-300 mt-1">{selectedKegiatan.lokasi}</p>
-              </div>
-              {selectedKegiatan.gambar && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6">
                 <div>
-                  <img
-                    src={`http://localhost:8000/storage/${selectedKegiatan.gambar}`}
-                    alt={selectedKegiatan.nama_kegiatan}
-                    className="w-full h-48 object-cover rounded mt-3"
-                  />
+                  <span className="text-yellow-400 font-bold">Tanggal:</span>
+                  <p className="text-gray-300 mt-1">{selectedKegiatan.tanggal}</p>
                 </div>
-              )}
+                <div>
+                  <span className="text-yellow-400 font-bold">Waktu:</span>
+                  <p className="text-gray-300 mt-1">{selectedKegiatan.waktu}</p>
+                </div>
+                <div className="col-span-full">
+                  <span className="text-yellow-400 font-bold">Lokasi:</span>
+                  <p className="text-gray-300 mt-1">{selectedKegiatan.lokasi}</p>
+                </div>
+              </div>
             </div>
-            <div className="flex justify-between mt-8">
+            <div className="flex flex-col sm:flex-row justify-between gap-4 mt-10">
               <Button
-                variant="ghost"
                 onClick={() => setSelectedKegiatan(null)}
-                className="text-gray-300 hover:text-white hover:bg-white/10"
+                className="px-7 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full sm:w-auto"
               >
                 Tutup
               </Button>
               {(userRole === 'admin' || userRole === 'takmir') && (
-                <div className="flex space-x-3">
+                <div className="flex gap-4 w-full sm:w-auto">
                   <Button
                     onClick={handleEdit}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                    className="px-7 py-3 bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-md text-lg font-semibold transition-colors duration-200 w-full"
                   >
                     Edit
                   </Button>
                   <Button
-                    variant="destructive"
                     onClick={() => {
                       setShowDeleteDialog(true);
                     }}
-                    className="bg-red-500 hover:bg-red-600"
+                    className="px-7 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full"
                   >
                     Hapus
                   </Button>
@@ -432,31 +540,40 @@ const KegiatanPage = () => {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="bg-[#1A1614] border-white/10 text-white shadow-xl">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-yellow-400">Konfirmasi Hapus Kegiatan</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Apakah Anda yakin ingin menghapus kegiatan {selectedKegiatan?.nama_kegiatan}? Tindakan ini tidak dapat dibatalkan.
+        <DialogContent className="bg-[#1A1614] border-gray-700 text-white shadow-xl p-8 rounded-xl max-w-md animate-fade-in animate-scale-up-center">
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-3xl font-bold text-yellow-400 mb-2">Konfirmasi Hapus Kegiatan</DialogTitle>
+            <DialogDescription className="text-gray-300 text-lg">
+              Apakah Anda yakin ingin menghapus kegiatan <strong className="text-yellow-300">"{selectedKegiatan?.nama_kegiatan}"</strong>? Tindakan ini tidak dapat dibatalkan.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex gap-2 mt-4">
+          <DialogFooter className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
             <Button
-              variant="ghost"
               onClick={() => {
                 setShowDeleteDialog(false);
+                setSelectedKegiatan(null);
               }}
-              className="text-gray-300 hover:text-white hover:bg-white/10"
+              className="px-7 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full sm:w-auto"
               disabled={isLoading}
             >
               Batal
             </Button>
             <Button
-              variant="destructive"
               onClick={() => selectedKegiatan && handleDeleteKegiatan(selectedKegiatan.id)}
-              className="bg-red-500 hover:bg-red-600"
+              className="px-7 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto"
               disabled={isLoading}
             >
-              {isLoading ? 'Menghapus...' : 'Hapus'}
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Menghapus...</span>
+                </>
+              ) : (
+                'Hapus'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

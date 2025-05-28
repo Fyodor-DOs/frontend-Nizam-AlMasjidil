@@ -224,21 +224,22 @@ const LaporanPage = () => {
           </table>
         </div>
 
-        <div className="flex gap-4 mt-6 justify-end">
-          <button
-            onClick={exportToPDF}
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition"
-          >
-            Export PDF
-          </button>
-        </div>
+        <div className="flex justify-between items-center mt-6">
+  <button
+    onClick={() => router.push('/keuangan')}
+    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition"
+  >
+    ← Kembali ke Keuangan
+  </button>
 
-        <button
-          onClick={() => router.push('/keuangan')}
-          className="mt-6 text-sm text-blue-400 hover:underline block text-center"
-        >
-          ← Kembali ke Keuangan
-        </button>
+  <button
+    onClick={exportToPDF}
+    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition"
+  >
+    Export PDF
+  </button>
+</div>
+
       </div>
     </div>
   );
