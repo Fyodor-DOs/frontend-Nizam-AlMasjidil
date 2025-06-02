@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { setAuthToken } from '@/utils/api';
 
 interface NavbarProps {
   role: string | null;
@@ -31,9 +32,13 @@ const Navbar = ({ role, user }: NavbarProps) => {
   const router = useRouter();
 
   const handleLogout = () => {
+    // Clear all auth-related data
     localStorage.removeItem('authToken');
     localStorage.removeItem('role');
-    router.push('/login');
+    setAuthToken(null);
+    
+    // Force a hard reload to clear all state
+    window.location.href = '/login';
   };
 
   return (
