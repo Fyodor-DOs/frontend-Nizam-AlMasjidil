@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api, { setAuthToken } from '@/utils/api';
 import Navbar from '@/components/Navbar';
+import GuestNavbar from '@/components/GuestNavbar';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button"; // Assuming Button component is styled consistently
+import { Button } from "@/components/ui/button";
 
 type Tausiyah = {
   id: number;
@@ -33,27 +34,23 @@ interface User {
 }
 
 const TausiyahPage = () => {
+  const router = useRouter();
   const [tausiyahList, setTausiyahList] = useState<Tausiyah[]>([]);
   const [formData, setFormData] = useState({ id: 0, judul: '', isi: '', waktu: '' });
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false); // For Add/Edit Tausiyah
+  const [user, setUser] = useState<User | null>(null);
+  const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false); // For Delete Confirmation
-  const [tausiyahToDelete, setTausiyahToDelete] = useState<Tausiyah | null>(null); // To store tausiyah object to be deleted
-
-  const router = useRouter();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [tausiyahToDelete, setTausiyahToDelete] = useState<Tausiyah | null>(null);
 
   const getCurrentDateTime = () => {
-    const now = new Date();
-    // Format to 'YYYY-MM-DDTHH:MM' for datetime-local input compatibility
-    return now.toISOString().slice(0, 16);
+    return new Date().toISOString().slice(0, 16);
   };
 
   useEffect(() => {
-    // Control body overflow when modals are open
     if (showModal || showDeleteDialog) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -71,22 +68,17 @@ const TausiyahPage = () => {
     if (token) {
       setAuthToken(token);
       setUserRole(role);
-      fetchUserData();
-    } else {
-      // Redirect to login if no token, consistent with KegiatanPage
-      router.push('/login');
+      fetchUser();
     }
     fetchTausiyah();
   }, [router]);
 
-  const fetchUserData = async () => {
+  const fetchUser = async () => {
     try {
-      const response = await api.get('/user');
-      setUser(response.data);
-    } catch (err) {
-      console.error('Error fetching user data:', err);
-      // Optionally handle error, e.g., redirect to login if user session is invalid
-      // router.push('/login');
+      const res = await api.get('/user');
+      setUser(res.data);
+    } catch (e) {
+      console.error('Error fetching user:', e);
     }
   };
 
@@ -94,51 +86,48 @@ const TausiyahPage = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await api.get('/tausiyah');
-      console.log('Tausiyah response:', response.data);
-      setTausiyahList(response.data);
-    } catch (err: any) {
-      console.error('Gagal mengambil data tausiyah:', err);
-      setError(err.response?.data?.message || 'Gagal mengambil data tausiyah');
+      const res = await api.get('/tausiyah');
+      setTausiyahList(res.data);
+    } catch (e: any) {
+      setError(e.message || 'Gagal mengambil tausiyah');
     } finally {
       setIsLoading(false);
     }
-  };
+  };  
 
-  const handleCreateOrUpdate = async () => {
+  const handleSave = async () => {
     if (userRole !== 'admin') {
-      setError('Anda tidak memiliki izin untuk melakukan aksi ini.');
+      setError('Anda tidak memiliki izin melakukan aksi ini.');
       return;
     }
 
     if (!formData.judul || !formData.isi) {
-      setError('Judul dan isi harus diisi!');
+      setError('Judul dan isi harus diisi.');
       return;
     }
 
     try {
       setIsLoading(true);
       setError(null);
-      const dataToSubmit = {
+
+      const payload = {
         judul: formData.judul,
         isi: formData.isi,
-        // Ensure waktu is correctly formatted if needed by backend, otherwise, backend might handle it
-        waktu: formData.waktu || getCurrentDateTime() // Use existing time if editing, or current time if creating
+        waktu: formData.waktu || getCurrentDateTime(),
       };
 
       if (editMode && formData.id) {
-        await api.put(`/tausiyah/${formData.id}`, dataToSubmit);
+        await api.put(`/tausiyah/${formData.id}`, payload);
       } else {
-        await api.post('/tausiyah', dataToSubmit);
+        await api.post('/tausiyah', payload);
       }
+
       setShowModal(false);
       setEditMode(false);
       setFormData({ id: 0, judul: '', isi: '', waktu: '' });
       await fetchTausiyah();
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || (editMode ? 'Gagal mengedit tausiyah' : 'Gagal menambah tausiyah');
-      setError(errorMessage);
-      console.error('Error saving tausiyah:', err);
+    } catch (e: any) {
+      setError(e.response?.data?.message || e.message || 'Terjadi kesalahan saat menyimpan');
     } finally {
       setIsLoading(false);
     }
@@ -151,7 +140,7 @@ const TausiyahPage = () => {
 
   const handleDeleteConfirm = async () => {
     if (userRole !== 'admin' || !tausiyahToDelete) {
-      setError('Anda tidak memiliki izin untuk menghapus tausiyah atau tausiyah tidak ditemukan.');
+      setError('Anda tidak memiliki izin menghapus atau data tidak ditemukan.');
       return;
     }
 
@@ -162,10 +151,8 @@ const TausiyahPage = () => {
       setShowDeleteDialog(false);
       setTausiyahToDelete(null);
       await fetchTausiyah();
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Gagal menghapus tausiyah';
-      setError(errorMessage);
-      console.error('Error deleting tausiyah:', err);
+    } catch (e: any) {
+      setError(e.response?.data?.message || e.message || 'Gagal menghapus tausiyah');
     } finally {
       setIsLoading(false);
     }
@@ -173,12 +160,16 @@ const TausiyahPage = () => {
 
   return (
     <div className="min-h-screen bg-[#1A1614] text-white">
-      <Navbar role={userRole} user={user} />
+      {userRole ? (
+        <Navbar role={userRole} user={user} />
+      ) : (
+        <GuestNavbar />
+      )}
 
-      {/* Hero Section (Banner) */}
+      {/* Hero Section */}
       <div className="relative h-96 w-full flex items-center justify-center overflow-hidden">
         <img
-          src="/images/masjid7.jpg" // Consistent image for branding
+          src="/images/masjid7.jpg"
           alt="Masjid"
           className="absolute inset-0 w-full h-full object-cover opacity-50"
         />
@@ -193,9 +184,8 @@ const TausiyahPage = () => {
         </div>
       </div>
 
-      {/* Main Content - Description and Tausiyah List */}
+      {/* Main Content */}
       <div className="container mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
-        {/* Description Section */}
         <div className="text-center md:text-left">
           <h2 className="text-4xl font-bold mb-6 text-yellow-400">
             Mutiara Hikmah Setiap Hari
@@ -204,17 +194,16 @@ const TausiyahPage = () => {
             Halaman ini didedikasikan untuk menyajikan kumpulan tausiyah, khutbah, dan nasihat Islami. Temukan pencerahan untuk jiwa, inspirasi untuk kehidupan, dan panduan untuk beribadah dalam setiap tulisan.
           </p>
           <ul className="list-disc list-inside text-lg space-y-3 mb-8 text-gray-300">
-            <li>**Inspirasi Harian:** Bacaan ringan untuk memulai hari dengan keberkahan.</li>
-            <li>**Pencerahan Jiwa:** Topik mendalam untuk meningkatkan keimanan.</li>
-            <li>**Panduan Amaliah:** Nasihat praktis untuk ibadah sehari-hari.</li>
-            <li>**Dari Berbagai Ulama:** Koleksi dari sumber-sumber terpercaya.</li>
+            <li>Inspirasi Harian: Bacaan ringan untuk memulai hari dengan keberkahan.</li>
+            <li>Pencerahan Jiwa: Topik mendalam untuk meningkatkan keimanan.</li>
+            <li>Panduan Amaliah: Nasihat praktis untuk ibadah sehari-hari.</li>
+            <li>Dari Berbagai Ulama: Koleksi dari sumber-sumber terpercaya.</li>
           </ul>
           <p className="text-xl leading-relaxed font-semibold text-yellow-300">
             Mari kita jadikan setiap bacaan sebagai langkah mendekatkan diri kepada-Nya.
           </p>
         </div>
 
-        {/* Tausiyah List Section (resembling donation form card) */}
         <div className="bg-black rounded-2xl shadow-2xl overflow-hidden">
           <div className="bg-yellow-400 text-black py-4 px-6 text-center font-bold text-lg relative">
             Daftar Tausiyah Terbaru
@@ -224,7 +213,7 @@ const TausiyahPage = () => {
                   setShowModal(true);
                   setEditMode(false);
                   setFormData({ id: 0, judul: '', isi: '', waktu: getCurrentDateTime() });
-                  setError(null); // Clear previous errors
+                  setError(null);
                 }}
                 className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-semibold transition-colors duration-200"
               >
@@ -279,7 +268,7 @@ const TausiyahPage = () => {
                               id: item.id,
                               judul: item.judul,
                               isi: item.isi,
-                              waktu: item.waktu.slice(0, 16), // Ensure correct format for datetime-local
+                              waktu: item.waktu.slice(0, 16),
                             });
                             setEditMode(true);
                             setShowModal(true);
@@ -305,137 +294,119 @@ const TausiyahPage = () => {
         </div>
       </div>
 
-      {/* "Kembali ke Beranda" Button - Placed at the bottom */}
-      <div className="text-center pb-16 pt-8">
-        <button
-          onClick={() => router.push('/dashboard')}
-          className="bg-yellow-400 text-black font-semibold py-3 px-6 rounded-full hover:bg-yellow-500 transition-colors duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-        >
-          ← Kembali ke Beranda
-        </button>
-      </div>
+      {/* Modal Form */}
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>{editMode ? 'Edit Tausiyah' : 'Tambah Tausiyah'}</DialogTitle>
+            <DialogDescription>
+              {editMode
+                ? 'Ubah informasi tausiyah sesuai kebutuhan.'
+                : 'Isi formulir berikut untuk menambahkan tausiyah baru.'}
+            </DialogDescription>
+          </DialogHeader>
 
-      {/* Modal Buat/Edit */}
-      {showModal && userRole === 'admin' && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="border border-gray-700 bg-[#1A1614] p-8 rounded-lg shadow-2xl w-full max-w-md text-white transform scale-100 transition-transform duration-300">
-            <h2 className="text-3xl font-bold mb-6 text-center text-yellow-400">
-              {editMode ? 'Edit Tausiyah' : 'Buat Tausiyah Baru'}
-            </h2>
-            {error && (
-              <div className="mb-6 p-4 bg-red-600/20 border border-red-500 rounded-lg text-red-400 text-center text-sm">
-                {error}
-              </div>
-            )}
-            <div className="space-y-5">
-              <div>
-                <label className="block mb-2 font-semibold text-gray-300">Judul Tausiyah</label>
-                <input
-                  type="text"
-                  placeholder="Contoh: Keutamaan Sholat Berjamaah"
-                  value={formData.judul}
-                  onChange={(e) => setFormData({ ...formData, judul: e.target.value })}
-                  className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 text-lg"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block mb-2 font-semibold text-gray-300">Isi Tausiyah</label>
-                <textarea
-                  placeholder="Tulis isi tausiyah di sini..."
-                  value={formData.isi}
-                  onChange={(e) => setFormData({ ...formData, isi: e.target.value })}
-                  className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 h-40 text-lg"
-                  required
-                />
-              </div>
-              {/* Only show waktu field if in edit mode, as new tausiyah will use current time */}
-              {editMode && (
-                <div>
-                  <label className="block mb-2 font-semibold text-gray-300">Waktu Tausiyah</label>
-                  <input
-                    type="datetime-local"
-                    value={formData.waktu}
-                    onChange={(e) => setFormData({ ...formData, waktu: e.target.value })}
-                    className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white focus:ring-yellow-500 focus:border-yellow-500 text-lg"
-                    required
-                  />
-                </div>
-              )}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSave();
+            }}
+            className="flex flex-col gap-4 mt-4"
+          >
+            <div>
+              <label htmlFor="judul" className="block font-semibold mb-1 text-black">
+                Judul
+              </label>
+              <input
+                type="text"
+                id="judul"
+                name="judul"
+                value={formData.judul}
+                onChange={(e) => setFormData({ ...formData, judul: e.target.value })}
+                required
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-black"
+                placeholder="Judul tausiyah"
+              />
             </div>
 
-            <div className="flex justify-end space-x-4 mt-8">
-              <button
+            <div>
+              <label htmlFor="isi" className="block font-semibold mb-1 text-black">
+                Isi
+              </label>
+              <textarea
+                id="isi"
+                name="isi"
+                rows={6}
+                value={formData.isi}
+                onChange={(e) => setFormData({ ...formData, isi: e.target.value })}
+                required
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-black"
+                placeholder="Isi tausiyah"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="waktu" className="block font-semibold mb-1 text-black">
+                Waktu
+              </label>
+              <input
+                type="datetime-local"
+                id="waktu"
+                name="waktu"
+                value={formData.waktu}
+                onChange={(e) => setFormData({ ...formData, waktu: e.target.value })}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-black"
+              />
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => {
                   setShowModal(false);
                   setEditMode(false);
                   setFormData({ id: 0, judul: '', isi: '', waktu: '' });
                   setError(null);
                 }}
-                className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200"
-                disabled={isLoading}
+                className="mr-4"
               >
                 Batal
-              </button>
-              <button
-                onClick={handleCreateOrUpdate}
-                className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5 text-gray-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span>Menyimpan...</span>
-                  </>
-                ) : (
-                  editMode ? 'Simpan Perubahan' : 'Buat Tausiyah'
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? 'Menyimpan...' : 'Simpan'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="bg-[#1A1614] border-gray-700 text-white shadow-xl p-8 rounded-lg max-w-md">
-          <DialogHeader className="text-center">
-            <DialogTitle className="text-3xl font-bold text-yellow-400 mb-2">Konfirmasi Hapus Tausiyah</DialogTitle>
-            <DialogDescription className="text-gray-300 text-lg">
-              Apakah Anda yakin ingin menghapus tausiyah **"{tausiyahToDelete?.judul}"**? Tindakan ini tidak dapat dibatalkan.
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Konfirmasi Hapus</DialogTitle>
+            <DialogDescription>
+              Apakah Anda yakin ingin menghapus tausiyah{' '}
+              <strong>{tausiyahToDelete?.judul}</strong>?
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
-            <button
-              onClick={() => {
-                setShowDeleteDialog(false);
-                setTausiyahToDelete(null); // Clear item on dialog close
-              }}
-              className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full sm:w-auto"
-              disabled={isLoading}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              className="mr-4"
             >
               Batal
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="destructive"
               onClick={handleDeleteConfirm}
-              className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto"
               disabled={isLoading}
             >
-              {isLoading ? (
-                <>
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span>Menghapus...</span>
-                </>
-              ) : (
-                'Hapus'
-              )}
-            </button>
+              {isLoading ? 'Menghapus...' : 'Hapus'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
