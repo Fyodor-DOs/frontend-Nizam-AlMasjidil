@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import Navbar from '@/components/Navbar';
+import GuestNavbar from '@/components/GuestNavbar';
 
 type Tausiyah = {
   id: number;
@@ -147,7 +148,11 @@ const TausiyahDetailPage = ({ params }: { params: Promise<{ id: string }> }) => 
 
   return (
     <div className="min-h-screen bg-[#1A1614]">
-      <Navbar role={userRole} user={user} />
+      {userRole ? (
+        <Navbar role={userRole} user={user} />
+      ) : (
+        <GuestNavbar />
+      )}
       
       {/* Banner */}
       <div className="relative h-64 w-full">
