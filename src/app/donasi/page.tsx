@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api, { setAuthToken } from '@/utils/api';
 import Navbar from '@/components/Navbar';
+import { motion } from 'framer-motion'; // Import motion
 
 interface User {
   id: number;
@@ -84,6 +85,39 @@ const Donasi = () => {
     }
   };
 
+  // Framer Motion Variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1, // Stagger animation for children
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+  };
+
+  const sectionVariants = {
+    hidden: { opacity: 0, y: 50 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: 'easeOut' } },
+  };
+
+  const formVariants = {
+    hidden: { opacity: 0, scale: 0.95 },
+    visible: { opacity: 1, scale: 1, transition: { duration: 0.7, ease: 'easeOut' } },
+  };
+
+  const messageVariants = {
+    hidden: { opacity: 0, y: -20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+    exit: { opacity: 0, y: 20, transition: { duration: 0.3 } },
+  };
+
+
   return (
     <div className="min-h-screen bg-[#1A1614] text-white">
       <Navbar role={role} user={user} />
@@ -96,63 +130,101 @@ const Donasi = () => {
           className="absolute inset-0 w-full h-full object-cover opacity-50"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#1A1614] via-[#1A1614]/50 to-transparent"></div>
-        <div className="relative z-10 text-center p-4">
-          <h1 className="text-5xl md:text-6xl font-extrabold leading-tight text-white drop-shadow-lg">
+        <motion.div
+          className="relative z-10 text-center p-4"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.h1
+            className="text-5xl md:text-6xl font-extrabold leading-tight text-white drop-shadow-lg"
+            variants={itemVariants}
+          >
             Ulurkan Tangan, Tebar Kebaikan
-          </h1>
-          <p className="mt-4 text-xl md:text-2xl font-light text-gray-200">
+          </motion.h1>
+          <motion.p
+            className="mt-4 text-xl md:text-2xl font-light text-gray-200"
+            variants={itemVariants}
+          >
             Setiap donasi Anda adalah cahaya bagi kemajuan masjid dan komunitas.
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
       </div>
 
       {/* Konten Utama */}
       <div className="container mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         {/* Deskripsi */}
-        <div className="text-center md:text-left">
-          <h2 className="text-4xl font-bold mb-6 text-yellow-400">
+        <motion.div
+          className="text-center md:text-left"
+          variants={sectionVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }} // Animate when 30% of the element is in view
+        >
+          <motion.h2 className="text-4xl font-bold mb-6 text-yellow-400" variants={itemVariants}>
             Dampak Positif Donasi Anda
-          </h2>
-          <p className="text-lg leading-relaxed mb-6 text-gray-300">
+          </motion.h2>
+          <motion.p className="text-lg leading-relaxed mb-6 text-gray-300" variants={itemVariants}>
             Kontribusi Anda sangat berarti untuk operasional dan program masjid yang berkelanjutan. Donasi Anda membantu kami dalam:
-          </p>
-          <ul className="list-disc list-inside text-lg space-y-3 mb-8 text-gray-300">
-            <li><strong>Pemeliharaan Rutin:</strong> Menjaga kebersihan dan kenyamanan fasilitas ibadah.</li>
-            <li><strong>Program Pendidikan:</strong> Mendukung kelas mengaji, kajian, dan pelatihan keagamaan.</li>
-            <li><strong>Kegiatan Sosial:</strong> Menyalurkan bantuan kepada yang membutuhkan di lingkungan sekitar.</li>
-            <li><strong>Pengembangan Infrastruktur:</strong> Memperbaiki dan memperluas area masjid jika diperlukan.</li>
-          </ul>
-          <p className="text-xl leading-relaxed font-semibold text-yellow-300 mb-6">
+          </motion.p>
+          <motion.ul className="list-disc list-inside text-lg space-y-3 mb-8 text-gray-300" variants={containerVariants}>
+            <motion.li variants={itemVariants}><strong>Pemeliharaan Rutin:</strong> Menjaga kebersihan dan kenyamanan fasilitas ibadah.</motion.li>
+            <motion.li variants={itemVariants}><strong>Program Pendidikan:</strong> Mendukung kelas mengaji, kajian, dan pelatihan keagamaan.</motion.li>
+            <motion.li variants={itemVariants}><strong>Kegiatan Sosial:</strong> Menyalurkan bantuan kepada yang membutuhkan di lingkungan sekitar.</motion.li>
+            <motion.li variants={itemVariants}><strong>Pengembangan Infrastruktur:</strong> Memperbaiki dan memperluas area masjid jika diperlukan.</motion.li>
+          </motion.ul>
+          <motion.p className="text-xl leading-relaxed font-semibold text-yellow-300 mb-6" variants={itemVariants}>
             Jadikan donasi Anda sebagai investasi terbaik untuk akhirat.
-          </p>
+          </motion.p>
 
           {/* Tombol Kembali ke Beranda */}
-          <button
+          <motion.button
             onClick={() => router.push('/dashboard')}
             className="bg-yellow-400 text-black font-semibold py-3 px-6 rounded-full hover:bg-yellow-500 transition-colors duration-200 shadow-md hover:shadow-lg"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            variants={itemVariants}
           >
             Kembali ke Beranda
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
 
         {/* Form Donasi */}
-        <div className="bg-black rounded-2xl shadow-2xl overflow-hidden">
+        <motion.div
+          className="bg-black rounded-2xl shadow-2xl overflow-hidden"
+          variants={formVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+        >
           <div className="bg-yellow-400 text-black py-4 px-6 text-center font-bold text-lg">
             Formulir Donasi
           </div>
           <div className="p-8">
             {error && (
-              <div className="mb-6 p-4 bg-red-600/20 border border-red-500 rounded-lg text-red-400 text-center text-sm">
+              <motion.div
+                className="mb-6 p-4 bg-red-600/20 border border-red-500 rounded-lg text-red-400 text-center text-sm"
+                variants={messageVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit" // Use AnimatePresence if you want proper exit animations when component unmounts
+              >
                 {error}
-              </div>
+              </motion.div>
             )}
             {successMessage && (
-              <div className="mb-6 p-4 bg-green-600/20 border border-green-500 rounded-lg text-green-400 text-center text-sm">
+              <motion.div
+                className="mb-6 p-4 bg-green-600/20 border border-green-500 rounded-lg text-green-400 text-center text-sm"
+                variants={messageVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
                 {successMessage}
-              </div>
+              </motion.div>
             )}
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
+              <motion.div variants={itemVariants}>
                 <label htmlFor="jumlah" className="block mb-2 font-semibold text-gray-200">Jumlah Donasi (Rp)</label>
                 <input
                   type="number"
@@ -165,8 +237,8 @@ const Donasi = () => {
                   required
                   min="10000"
                 />
-              </div>
-              <div>
+              </motion.div>
+              <motion.div variants={itemVariants}>
                 <label htmlFor="metode_pembayaran" className="block mb-2 font-semibold text-gray-200">Metode Pembayaran</label>
                 <select
                   id="metode_pembayaran"
@@ -181,11 +253,14 @@ const Donasi = () => {
                   <option value="tunai">Tunai Langsung</option>
                   <option value="e-wallet">E-Wallet (Dana, OVO, GoPay, dll.)</option>
                 </select>
-              </div>
-              <button
+              </motion.div>
+              <motion.button
                 type="submit"
                 className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-4 rounded-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-xl"
                 disabled={isLoading}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                variants={itemVariants}
               >
                 {isLoading ? (
                   <>
@@ -198,10 +273,10 @@ const Donasi = () => {
                 ) : (
                   'Donasi Sekarang Juga'
                 )}
-              </button>
+              </motion.button>
             </form>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

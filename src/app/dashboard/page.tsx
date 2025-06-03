@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Navbar from '@/components/Navbar';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const images = [
   '/images/masjid4.jpg',
@@ -22,6 +23,26 @@ const images = [
 ];
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
+const cardVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeInOut' } },
+  hover: { scale: 1.05, transition: { duration: 0.2 } },
+};
+
+const chartVariants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { duration: 0.7, delay: 0.3, ease: 'easeInOut' } },
+};
+
+const listItemVariants = {
+  initial: { opacity: 0, y: 10 },
+  animate: (index: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.3, delay: 0.1 * index, ease: 'easeInOut' },
+  }),
+};
 
 const Dashboard = () => {
   const [role, setRole] = useState<string | null>(null);
@@ -37,13 +58,13 @@ const Dashboard = () => {
   const [totalDonasi, setTotalDonasi] = useState<number>(0);
   const [totalSaldo, setTotalSaldo] = useState<number>(0);
   const [totalKegiatan, setTotalKegiatan] = useState<number>(0);
-  const [donasiChartData, setDonasiChartData] = useState<any[]>([]);
+  const [donasiChartData, setDonasiChartData] = useState<any[]>([]); // This state is declared but not used for pie chart data. It should be displayDonasiData.
   const [keuanganFilter, setKeuanganFilter] = useState('bulan');
   const [donasiFilter, setDonasiFilter] = useState('bulan');
   const [displayKeuanganData, setDisplayKeuanganData] = useState<any[]>([]);
   const [displayDonasiData, setDisplayDonasiData] = useState<any[]>([]);
   const [prayerTimes, setPrayerTimes] = useState<any>(null);
-  const [selectedCity, setSelectedCity] = useState('Jakarta');
+  const [selectedCity, setSelectedCity] = useState('Malang'); // Default to Malang
 
   const cities = [
     { name: 'Jakarta', value: 'Jakarta' },
@@ -69,11 +90,13 @@ const Dashboard = () => {
       setRole(userRole);
       fetchDashboardData();
       fetchUserData();
+      // Initial fetch prayer times with default city
       fetchPrayerTimes();
     }
   }, [router]);
 
   useEffect(() => {
+    // Re-fetch prayer times when selectedCity changes
     fetchPrayerTimes();
   }, [selectedCity]);
 
@@ -115,7 +138,7 @@ const Dashboard = () => {
       const response = await fetch(
         `https://api.aladhan.com/v1/timingsByCity?city=${selectedCity}&country=Indonesia&method=11`
       );
-      
+
       const data = await response.json();
       if (data.code === 200) {
         setPrayerTimes(data.data.timings);
@@ -147,7 +170,7 @@ const Dashboard = () => {
 
   const processAndFormatKeuanganData = (data: any[], filter: string) => {
     const now = new Date();
-    now.setHours(0, 0, 0, 0); 
+    now.setHours(0, 0, 0, 0);
 
     let groupedData: any = {};
     let dateFormat = '';
@@ -156,123 +179,7 @@ const Dashboard = () => {
 
     const filteredData = data.filter(item => {
       const itemDate = new Date(item.tanggal);
-      itemDate.setHours(0, 0, 0, 0); 
-
-      switch (filter) {
-        case 'minggu':
-          const startOfWeek = new Date(now);
-          startOfWeek.setDate(now.getDate() - now.getDay()); 
-          return itemDate >= startOfWeek && itemDate <= now;
-        case 'bulan':
-          const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-          const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-          endOfMonth.setHours(23, 59, 59, 999);
-          return itemDate >= startOfMonth && itemDate <= endOfMonth;
-        case 'tahun':
-          const startOfYear = new Date(now.getFullYear(), 0, 1);
-           const endOfYear = new Date(now.getFullYear(), 11, 31);
-           endOfYear.setHours(23, 59, 59, 999);
-          return itemDate >= startOfYear && itemDate <= endOfYear;
-        default:
-          const defaultStartOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-          const defaultEndOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-          defaultEndOfMonth.setHours(23, 59, 59, 999);
-          return itemDate >= defaultStartOfMonth && itemDate <= defaultEndOfMonth;
-      }
-    });
-
-    switch (filter) {
-      case 'minggu':
-        dateFormat = 'EEE'; 
-        const dayOrder = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-        sortFunc = (a: any, b: any) => dayOrder.indexOf(a.key) - dayOrder.indexOf(b.key);
-         for(let i = 0; i < 7; i++){
-           const date = new Date(now);
-           date.setDate(now.getDate() - now.getDay() + i);
-           const key = date.toLocaleDateString('id-ID', { weekday: 'short' });
-           groupedData[key] = { key: key, pemasukan: 0, pengeluaran: 0 };
-         }
-        filteredData.forEach(item => {
-          const date = new Date(item.tanggal);
-          const key = date.toLocaleDateString('id-ID', { weekday: 'short' });
-           if (groupedData[key]) { 
-             if (item.tipe_keuangan_id === 1) {
-               groupedData[key].pemasukan += parseFloat(item.jumlah);
-             } else if (item.tipe_keuangan_id === 2) {
-               groupedData[key].pengeluaran += parseFloat(item.jumlah);
-             }
-           }
-        });
-        break;
-      case 'bulan':
-        sortFunc = (a: any, b: any) => parseInt(a.key) - parseInt(b.key);
-         const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-         for(let i = 1; i <= daysInMonth; i++){
-           groupedData[i.toString()] = { key: i.toString(), pemasukan: 0, pengeluaran: 0 };
-         }
-        filteredData.forEach(item => {
-          const date = new Date(item.tanggal);
-          const key = date.getDate().toString();
-           if (groupedData[key]) { 
-             if (item.tipe_keuangan_id === 1) {
-               groupedData[key].pemasukan += parseFloat(item.jumlah);
-             } else if (item.tipe_keuangan_id === 2) {
-               groupedData[key].pengeluaran += parseFloat(item.jumlah);
-             }
-           }
-        });
-        break;
-      case 'tahun':
-        sortFunc = (a: any, b: any) => new Date(a.key + ' 1, ' + now.getFullYear()).getMonth() - new Date(b.key + ' 1, ' + now.getFullYear()).getMonth();
- 
-         const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-         monthNames.forEach(month => {
-           groupedData[month] = { key: month, pemasukan: 0, pengeluaran: 0 };
-         });
-        filteredData.forEach(item => {
-          const date = new Date(item.tanggal);
-           const key = date.toLocaleDateString('id-ID', { month: 'long' });
-           if (groupedData[key]) { 
-             if (item.tipe_keuangan_id === 1) {
-               groupedData[key].pemasukan += parseFloat(item.jumlah);
-             } else if (item.tipe_keuangan_id === 2) {
-               groupedData[key].pengeluaran += parseFloat(item.jumlah);
-             }
-           }
-        });
-        break;
-      default:
-         const defaultMonthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-         defaultMonthNames.forEach(month => {
-           groupedData[month] = { key: month, pemasukan: 0, pengeluaran: 0 };
-         });
-          filteredData.forEach(item => {
-            const date = new Date(item.tanggal);
-            const key = date.toLocaleDateString('id-ID', { month: 'long' });
-             if (groupedData[key]) {
-               if (item.tipe_keuangan_id === 1) {
-                 groupedData[key].pemasukan += parseFloat(item.jumlah);
-               } else if (item.tipe_keuangan_id === 2) {
-                 groupedData[key].pengeluaran += parseFloat(item.jumlah);
-               }
-             }
-          });
-         sortFunc = (a: any, b: any) => new Date(a.key + ' 1, ' + now.getFullYear()).getMonth() - new Date(b.key + ' 1, ' + now.getFullYear()).getMonth();
-        break;
-
-      }
-
-      const formattedData = Object.values(groupedData).sort(sortFunc);
-      setDisplayKeuanganData(formattedData);
-    };
-
-   const processAndFormatDonasiData = (data: any[], filter: string) => {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-
-    const filteredData = data.filter(item => {
-      const itemDate = new Date(item.tanggal);
-      itemDate.setHours(0, 0, 0, 0); 
+      itemDate.setHours(0, 0, 0, 0);
 
       switch (filter) {
         case 'minggu':
@@ -297,21 +204,136 @@ const Dashboard = () => {
       }
     });
 
+    switch (filter) {
+      case 'minggu':
+        dateFormat = 'EEE';
+        const dayOrder = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+        sortFunc = (a: any, b: any) => dayOrder.indexOf(a.key) - dayOrder.indexOf(b.key);
+        for(let i = 0; i < 7; i++){
+          const date = new Date(now);
+          date.setDate(now.getDate() - now.getDay() + i);
+          const key = date.toLocaleDateString('id-ID', { weekday: 'short' });
+          groupedData[`${key}`] = { key: key, pemasukan: 0, pengeluaran: 0 };
+        }
+        filteredData.forEach(item => {
+          const date = new Date(item.tanggal);
+          const key = date.toLocaleDateString('id-ID', { weekday: 'short' });
+          if (groupedData[`${key}`]) {
+            if (item.tipe_keuangan_id === 1) {
+              groupedData[`${key}`].pemasukan += parseFloat(item.jumlah);
+            } else if (item.tipe_keuangan_id === 2) {
+              groupedData[`${key}`].pengeluaran += parseFloat(item.jumlah);
+            }
+          }
+        });
+        break;
+      case 'bulan':
+        sortFunc = (a: any, b: any) => parseInt(a.key) - parseInt(b.key);
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        for(let i = 1; i <= daysInMonth; i++){
+          groupedData[`${i}`] = { key: i.toString(), pemasukan: 0, pengeluaran: 0 };
+        }
+        filteredData.forEach(item => {
+          const date = new Date(item.tanggal);
+          const key = date.getDate().toString();
+          if (groupedData[`${key}`]) {
+            if (item.tipe_keuangan_id === 1) {
+              groupedData[`${key}`].pemasukan += parseFloat(item.jumlah);
+            } else if (item.tipe_keuangan_id === 2) {
+              groupedData[`${key}`].pengeluaran += parseFloat(item.jumlah);
+            }
+          }
+        });
+        break;
+      case 'tahun':
+        sortFunc = (a: any, b: any) => new Date(a.key + ' 1, ' + now.getFullYear()).getMonth() - new Date(b.key + ' 1, ' + now.getFullYear()).getMonth();
+
+        const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        monthNames.forEach(month => {
+          groupedData[`${month}`] = { key: month, pemasukan: 0, pengeluaran: 0 };
+        });
+        filteredData.forEach(item => {
+          const date = new Date(item.tanggal);
+          const key = date.toLocaleDateString('id-ID', { month: 'long' });
+          if (groupedData[`${key}`]) {
+            if (item.tipe_keuangan_id === 1) {
+              groupedData[`${key}`].pemasukan += parseFloat(item.jumlah);
+            } else if (item.tipe_keuangan_id === 2) {
+              groupedData[`${key}`].pengeluaran += parseFloat(item.jumlah);
+            }
+          }
+        });
+        break;
+      default: // default to month for initial load if no filter is set
+        const defaultMonthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        defaultMonthNames.forEach(month => {
+          groupedData[`${month}`] = { key: month, pemasukan: 0, pengeluaran: 0 };
+        });
+        filteredData.forEach(item => {
+          const date = new Date(item.tanggal);
+          const key = date.toLocaleDateString('id-ID', { month: 'long' });
+          if (groupedData[`${key}`]) {
+            if (item.tipe_keuangan_id === 1) {
+              groupedData[`${key}`].pemasukan += parseFloat(item.jumlah);
+            } else if (item.tipe_keuangan_id === 2) {
+              groupedData[`${key}`].pengeluaran += parseFloat(item.jumlah);
+            }
+          }
+        });
+        sortFunc = (a: any, b: any) => new Date(a.key + ' 1, ' + now.getFullYear()).getMonth() - new Date(b.key + ' 1, ' + now.getFullYear()).getMonth();
+        break;
+    }
+
+    const formattedData = Object.values(groupedData).sort(sortFunc);
+    setDisplayKeuanganData(formattedData);
+  };
+
+  const processAndFormatDonasiData = (data: any[], filter: string) => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const filteredData = data.filter(item => {
+      const itemDate = new Date(item.tanggal);
+      itemDate.setHours(0, 0, 0, 0);
+
+      switch (filter) {
+        case 'minggu':
+          const startOfWeek = new Date(now);
+          startOfWeek.setDate(now.getDate() - now.getDay());
+          return itemDate >= startOfWeek && itemDate <= now;
+        case 'bulan':
+          const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          endOfMonth.setHours(23, 59, 59, 999);
+          return itemDate >= startOfMonth && itemDate <= endOfMonth;
+        case 'tahun':
+          const startOfYear = new Date(now.getFullYear(), 0, 1);
+          const endOfYear = new Date(now.getFullYear(), 11, 31);
+          endOfYear.setHours(23, 59, 59, 999);
+          return itemDate >= startOfYear && itemDate <= endOfYear;
+        default: // default to month for initial load if no filter is set
+          const defaultStartOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          const defaultEndOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          defaultEndOfMonth.setHours(23, 59, 59, 999);
+          return itemDate >= defaultStartOfMonth && itemDate <= defaultEndOfMonth;
+      }
+    });
+
     const groupedData = filteredData.reduce((acc: any, item: any) => {
       const method = item.metode_pembayaran;
-      if (!acc[method]) {
-        acc[method] = {
-          metode_pembayaran: method, 
+      if (!acc[`${method}`]) {
+        acc[`${method}`] = {
+          metode_pembayaran: method,
           jumlah: 0
         };
       }
-      acc[method].jumlah += parseFloat(item.jumlah);
+      acc[`${method}`].jumlah += parseFloat(item.jumlah);
       return acc;
     }, {});
 
     const chartData = Object.values(groupedData);
     setDisplayDonasiData(chartData);
-   };
+  };
 
   useEffect(() => {
     if (keuanganData.length > 0) {
@@ -348,91 +370,121 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="bg-[#1A1614] text-white min-h-screen flex flex-col font-sans antialiased">
+    <div // Changed from motion.div to div
+      className="bg-[#1A1614] text-white min-h-screen flex flex-col font-sans antialiased"
+      // Removed initial and animate props
+    >
       <Navbar role={role} user={user} />
       <div className="h-20" />
       <section className="relative h-[300px] w-full rounded-lg overflow-hidden shadow-xl mx-auto max-w-6xl mt-6 mb-8">
-        {images.map((imageUrl, index) => (
-          <div
-            key={index}
-            className={`absolute inset-0 transition-opacity duration-700 ${
-              index === currentImageIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
-            }`}
-            style={{ backgroundImage: `url('${imageUrl}')`, backgroundSize: 'cover', backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }}
-          >
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-between px-8">
-              <div>
-                <h2 className="text-4xl md:text-5xl font-extrabold text-yellow-400 leading-tight tracking-wider drop-shadow-lg">Selamat Datang di <br /> AlMasjid Digital</h2>
-              </div>
-              <div className="hidden md:flex items-center space-x-4">
-                <div className="bg-white/10 p-4 rounded-lg">
-                  <p className="text-gray-300 text-sm">Tanggal</p>
-                  <p className="text-white font-semibold">{new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        <AnimatePresence>
+          {images.map((imageUrl, index) => (
+            <motion.div
+              key={imageUrl}
+              className={`absolute inset-0 transition-opacity duration-700 ${
+                index === currentImageIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
+              }`}
+              style={{ backgroundImage: `url('${imageUrl}')`, backgroundSize: 'cover', backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: index === currentImageIndex ? 1 : 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.7, ease: 'easeInOut' }}
+            >
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-between px-8">
+                <div>
+                  <h2 className="text-4xl md:text-5xl font-extrabold text-yellow-400 leading-tight tracking-wider drop-shadow-lg">Selamat Datang di <br /> AlMasjid Digital</h2>
                 </div>
-                <div className="bg-white/10 p-4 rounded-lg">
-                  <p className="text-gray-300 text-sm">Waktu</p>
-                  <p className="text-white font-semibold">{new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</p>
+                <div className="hidden md:flex items-center space-x-4">
+                  <div className="bg-white/10 p-4 rounded-lg">
+                    <p className="text-gray-300 text-sm">Tanggal</p>
+                    <p className="text-white font-semibold">{new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                  </div>
+                  <div className="bg-white/10 p-4 rounded-lg">
+                    <p className="text-gray-300 text-sm">Waktu</p>
+                    <p className="text-white font-semibold">{new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50"></div>
-          </div>
-        ))}
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50"></div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </section>
 
       {/* Quick Stats */}
-      <section className="w-full max-w-6xl mx-auto mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-300">Total Donasi</p>
-                  <h3 className="text-2xl font-bold text-yellow-400">
-                    Rp {totalDonasi.toLocaleString('id-ID')}
-                  </h3>
+      <motion.section
+        className="w-full max-w-6xl mx-auto mb-8"
+        initial="initial"
+        animate="animate"
+        variants={{
+          animate: {
+            transition: {
+              staggerChildren: 0.1, // Stagger animation for children cards
+            },
+          },
+        }}
+      >
+        <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <motion.div variants={cardVariants} whileHover="hover">
+            <Card className="bg-white/5 border-white/10 transition-all duration-300 cursor-pointer">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-300">Total Donasi</p>
+                    <h3 className="text-2xl font-bold text-yellow-400">
+                      Rp {totalDonasi.toLocaleString('id-ID')}
+                    </h3>
+                  </div>
+                  <div className="p-3 bg-yellow-400/10 rounded-full">
+                    <DollarSign className="h-6 w-6 text-yellow-400" />
+                  </div>
                 </div>
-                <div className="p-3 bg-yellow-400/10 rounded-full">
-                  <DollarSign className="h-6 w-6 text-yellow-400" />
+              </CardContent>
+            </Card>
+          </motion.div>
+          <motion.div variants={cardVariants} whileHover="hover">
+            <Card className="bg-white/5 border-white/10 transition-all duration-300 cursor-pointer">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-300">Total Saldo</p>
+                    <h3 className="text-2xl font-bold text-green-400">
+                      Rp {totalSaldo.toLocaleString('id-ID')}
+                    </h3>
+                  </div>
+                  <div className="p-3 bg-green-400/10 rounded-full">
+                    <Wallet className="h-6 w-6 text-green-400" />
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
 
-          <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-300">Total Saldo</p>
-                  <h3 className="text-2xl font-bold text-green-400">
-                    Rp {totalSaldo.toLocaleString('id-ID')}
-                  </h3>
+          <motion.div variants={cardVariants} whileHover="hover">
+            <Card className="bg-white/5 border-white/10 transition-all duration-300 cursor-pointer">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-300">Total Kegiatan</p>
+                    <h3 className="text-2xl font-bold text-purple-400">{totalKegiatan}</h3>
+                  </div>
+                  <div className="p-3 bg-purple-400/10 rounded-full">
+                    <Calendar className="h-6 w-6 text-purple-400" />
+                  </div>
                 </div>
-                <div className="p-3 bg-green-400/10 rounded-full">
-                  <Wallet className="h-6 w-6 text-green-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-300">Total Kegiatan</p>
-                  <h3 className="text-2xl font-bold text-purple-400">{totalKegiatan}</h3>
-                </div>
-                <div className="p-3 bg-purple-400/10 rounded-full">
-                  <Calendar className="h-6 w-6 text-purple-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </motion.div>
+      </motion.section>
 
       {/* Charts Section */}
-      <section className="w-full max-w-6xl mx-auto mb-8 ">
+      <motion.section
+        className="w-full max-w-6xl mx-auto mb-8 "
+        initial="initial"
+        animate="animate"
+        variants={chartVariants} // Applies to the whole section for a unified entrance
+      >
         <div className="grid grid-cols-1 gap-6">
           <Card className="bg-white/5 border-white/10">
             <CardHeader className="pb-2">
@@ -445,7 +497,7 @@ const Dashboard = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="bg-[#1E1E1E] border-white/10 text-white hover:bg-white/10 hover:text-white">
                       {keuanganFilter === 'minggu' ? 'Minggu Ini' :
-                       keuanganFilter === 'bulan' ? 'Bulan Ini' : 'Tahun Ini'}
+                        keuanganFilter === 'bulan' ? 'Bulan Ini' : 'Tahun Ini'}
                       <svg
                         className="ml-2 h-4 w-4"
                         xmlns="http://www.w3.org/2000/svg"
@@ -521,7 +573,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* Grouped for staggered animation */}
             <Card className="bg-white/5 border-white/10">
               <CardHeader>
                 <CardTitle className="text-white">Jadwal Sholat Hari Ini</CardTitle>
@@ -541,27 +593,43 @@ const Dashboard = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {[
-                    { name: 'Imsak', time: prayerTimes?.Imsak, icon: '⏰' },
-                    { name: 'Subuh', time: prayerTimes?.Fajr, icon: '🌅' },
-                    { name: 'Dzuhur', time: prayerTimes?.Dhuhr, icon: '☀️' },
-                    { name: 'Ashar', time: prayerTimes?.Asr, icon: '🌤️' },
-                    { name: 'Maghrib', time: prayerTimes?.Maghrib, icon: '🌅' },
-                    { name: 'Isya', time: prayerTimes?.Isha, icon: '🌙' }
-                  ].map((prayer) => (
-                    <div 
-                      key={prayer.name}
-                      className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-300"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">{prayer.icon}</span>
-                        <span className="text-white">{prayer.name}</span>
-                      </div>
-                      <span className="text-yellow-400 font-semibold">{prayer.time}</span>
-                    </div>
-                  ))}
-                </div>
+                <motion.div layout className="space-y-3">
+                  {Object.entries(prayerTimes || {}).map(([key, value]) => {
+                    const prayerName = {
+                      Imsak: 'Imsak',
+                      Fajr: 'Subuh',
+                      Dhuhr: 'Dzuhur',
+                      Asr: 'Ashar',
+                      Maghrib: 'Maghrib',
+                      Isha: 'Isya',
+                    }[key];
+                    const prayerIcon = {
+                      Imsak: '⏰',
+                      Fajr: '🌅',
+                      Dhuhr: '☀️',
+                      Asr: '🌤️',
+                      Maghrib: '🌅',
+                      Isha: '🌙',
+                    }[key];
+
+                    return prayerName ? (
+                      <motion.div
+                        key={key}
+                        className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-300"
+                        variants={listItemVariants}
+                        initial="initial"
+                        animate="animate"
+                        custom={Object.keys(prayerTimes).indexOf(key)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">{prayerIcon}</span>
+                          <span className="text-white">{prayerName}</span>
+                        </div>
+                        <span className="text-yellow-400 font-semibold">{value as string}</span>
+                      </motion.div>
+                    ) : null;
+                  })}
+                </motion.div>
               </CardContent>
             </Card>
 
@@ -576,7 +644,7 @@ const Dashboard = () => {
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" className="bg-[#1E1E1E] border-white/10 text-white hover:bg-white/10 hover:text-white">
                         {donasiFilter === 'minggu' ? 'Minggu Ini' :
-                         donasiFilter === 'bulan' ? 'Bulan Ini' : 'Tahun Ini'}
+                          donasiFilter === 'bulan' ? 'Bulan Ini' : 'Tahun Ini'}
                         <svg
                           className="ml-2 h-4 w-4"
                           xmlns="http://www.w3.org/2000/svg"
@@ -642,7 +710,7 @@ const Dashboard = () => {
             </Card>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       <section className="w-full max-w-6xl mx-auto mb-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -653,56 +721,65 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                {[...keuanganData].reverse().slice(0, 20).map((item, index) => (
-                  <div key={index} className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
-                    <div className={`p-2 rounded-full ${item.tipe_keuangan_id === 1 ? 'bg-green-400/10' : 'bg-red-400/10'}`}>
-                      {item.tipe_keuangan_id === 1 ? (
-                        <ArrowUpRight className="h-4 w-4 text-green-400" />
-                      ) : (
-                        <ArrowDownRight className="h-4 w-4 text-red-400" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-white">
-                        {item.tipe_keuangan_id === 1 ? 'Pemasukan' : 'Pengeluaran'}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Rp {parseFloat(item.jumlah).toLocaleString('id-ID')}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
+                <AnimatePresence mode="popLayout">
+                  {[...keuanganData].reverse().slice(0, 20).map((item, index) => (
+                    <motion.div
+                      key={item.id || `keuangan-${index}`} // Use a unique ID if available, fallback to index
+                      className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors"
+                      initial={{ opacity: 0, y: -20 }}
+                      animate={{ opacity: 1, y: 0, transition: { duration: 0.3, delay: index * 0.05 } }}
+                      exit={{ opacity: 0, x: -50, transition: { duration: 0.2 } }}
+                      layout
+                    >
+                      <div className={`p-2 rounded-full ${item.tipe_keuangan_id === 1 ? 'bg-green-400/10' : 'bg-red-400/10'}`}>
                         {item.tipe_keuangan_id === 1 ? (
-                          <>
-                            {item.keterangan && (
-                              <>
-                                <span className="text-gray-300">Dari: </span>
-                                {item.keterangan}
-                                {(item.user?.name || item.metode_pembayaran) && <span className="text-gray-300 ml-2">| </span>}
-                              </>
-                            )}
-                            {item.user?.name && (
-                              <>
-                                <span className="text-gray-300">User: </span>
-                                {item.user.name}
-                              </>
-                            )}
-                            {item.metode_pembayaran && (
-                              <>
-                                {item.user?.name && <span className="text-gray-300 ml-2">| </span>}
-                                <span className="text-gray-300">Metode: </span>
-                                {item.metode_pembayaran}
-                              </>
-                            )}
-                          </>
+                          <ArrowUpRight className="h-4 w-4 text-green-400" />
                         ) : (
-                          <>
-                            <span className="text-gray-300">Untuk: </span>
-                            {item.keterangan || 'Tidak disebutkan'}
-                          </>
+                          <ArrowDownRight className="h-4 w-4 text-red-400" />
                         )}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm text-white">
+                          {item.tipe_keuangan_id === 1 ? 'Pemasukan' : 'Pengeluaran'}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Rp {parseFloat(item.jumlah).toLocaleString('id-ID')}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {item.tipe_keuangan_id === 1 ? (
+                            <>
+                              {item.keterangan && (
+                                <>
+                                  <span className="text-gray-300">Dari: </span>
+                                  {item.keterangan}
+                                  {(item.user?.name || item.metode_pembayaran) && <span className="text-gray-300 ml-2">| </span>}
+                                </>
+                              )}
+                              {item.user?.name && (
+                                <>
+                                  <span className="text-gray-300">User: </span>
+                                  {item.user.name}
+                                </>
+                              )}
+                              {item.metode_pembayaran && (
+                                <>
+                                  {item.user?.name && <span className="text-gray-300 ml-2">| </span>}
+                                  <span className="text-gray-300">Metode: </span>
+                                  {item.metode_pembayaran}
+                                </>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-gray-300">Untuk: </span>
+                              {item.keterangan || 'Tidak disebutkan'}
+                            </>
+                          )}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
             </CardContent>
           </Card>
@@ -714,17 +791,26 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {kegiatanData.slice(0, 5).map((kegiatan, index) => (
-                  <div key={kegiatan.id} className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
-                    <div className="p-2 rounded-full bg-purple-400/10">
-                      <Calendar className="h-4 w-4 text-purple-400" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-white">{kegiatan.nama_kegiatan}</p>
-                      <p className="text-xs text-gray-400 mt-1">{kegiatan.tanggal} - {kegiatan.waktu}</p>
-                    </div>
-                  </div>
-                ))}
+                <AnimatePresence mode="popLayout">
+                  {kegiatanData.slice(0, 5).map((kegiatan, index) => (
+                    <motion.div
+                      key={kegiatan.id || `kegiatan-${index}`} // Use a unique ID if available, fallback to index
+                      className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors"
+                      initial={{ opacity: 0, y: -20 }}
+                      animate={{ opacity: 1, y: 0, transition: { duration: 0.3, delay: index * 0.05 } }}
+                      exit={{ opacity: 0, x: -50, transition: { duration: 0.2 } }}
+                      layout
+                    >
+                      <div className="p-2 rounded-full bg-purple-400/10">
+                        <Calendar className="h-4 w-4 text-purple-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm text-white">{kegiatan.nama_kegiatan}</p>
+                        <p className="text-xs text-gray-400 mt-1">{kegiatan.tanggal} - {kegiatan.waktu}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
             </CardContent>
           </Card>

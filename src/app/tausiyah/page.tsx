@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { motion } from 'framer-motion'; // Import motion
 
 type Tausiyah = {
   id: number;
@@ -93,7 +94,7 @@ const TausiyahPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };  
+  };
 
   const handleSave = async () => {
     if (userRole !== 'admin') {
@@ -158,6 +159,27 @@ const TausiyahPage = () => {
     }
   };
 
+  // Framer Motion variants
+  const heroVariants = {
+    hidden: { opacity: 0, y: 50 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } },
+  };
+
+  const listContainerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1, // Delay between each child animation
+      },
+    },
+  };
+
+  const listItemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+  };
+
   return (
     <div className="min-h-screen bg-[#1A1614] text-white">
       {userRole ? (
@@ -174,34 +196,69 @@ const TausiyahPage = () => {
           className="absolute inset-0 w-full h-full object-cover opacity-50"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#1A1614] via-[#1A1614]/50 to-transparent"></div>
-        <div className="relative z-10 text-center p-4">
-          <h1 className="text-5xl md:text-6xl font-extrabold leading-tight text-white drop-shadow-lg">
+        <motion.div
+          className="relative z-10 text-center p-4"
+          initial="hidden"
+          animate="visible"
+          variants={heroVariants}
+        >
+          <motion.h1
+            className="text-5xl md:text-6xl font-extrabold leading-tight text-white drop-shadow-lg"
+            variants={heroVariants}
+          >
             Kumpulan Tausiyah
-          </h1>
-          <p className="mt-4 text-xl md:text-2xl font-light text-gray-200">
+          </motion.h1>
+          <motion.p
+            className="mt-4 text-xl md:text-2xl font-light text-gray-200"
+            variants={heroVariants}
+          >
             Nasihat dan pencerahan hati dari para ulama dan asatidz.
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
       </div>
 
       {/* Main Content */}
       <div className="container mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
         <div className="text-center md:text-left">
-          <h2 className="text-4xl font-bold mb-6 text-yellow-400">
+          <motion.h2
+            className="text-4xl font-bold mb-6 text-yellow-400"
+            initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.5 }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+          >
             Mutiara Hikmah Setiap Hari
-          </h2>
-          <p className="text-lg leading-relaxed mb-6 text-gray-300">
+          </motion.h2>
+          <motion.p
+            className="text-lg leading-relaxed mb-6 text-gray-300"
+            initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.5 }}
+            transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+          >
             Halaman ini didedikasikan untuk menyajikan kumpulan tausiyah, khutbah, dan nasihat Islami. Temukan pencerahan untuk jiwa, inspirasi untuk kehidupan, dan panduan untuk beribadah dalam setiap tulisan.
-          </p>
-          <ul className="list-disc list-inside text-lg space-y-3 mb-8 text-gray-300">
-            <li>Inspirasi Harian: Bacaan ringan untuk memulai hari dengan keberkahan.</li>
-            <li>Pencerahan Jiwa: Topik mendalam untuk meningkatkan keimanan.</li>
-            <li>Panduan Amaliah: Nasihat praktis untuk ibadah sehari-hari.</li>
-            <li>Dari Berbagai Ulama: Koleksi dari sumber-sumber terpercaya.</li>
-          </ul>
-          <p className="text-xl leading-relaxed font-semibold text-yellow-300">
+          </motion.p>
+          <motion.ul
+            className="list-disc list-inside text-lg space-y-3 mb-8 text-gray-300"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.5 }}
+            variants={listContainerVariants}
+          >
+            <motion.li variants={listItemVariants}>Inspirasi Harian: Bacaan ringan untuk memulai hari dengan keberkahan.</motion.li>
+            <motion.li variants={listItemVariants}>Pencerahan Jiwa: Topik mendalam untuk meningkatkan keimanan.</motion.li>
+            <motion.li variants={listItemVariants}>Panduan Amaliah: Nasihat praktis untuk ibadah sehari-hari.</motion.li>
+            <motion.li variants={listItemVariants}>Dari Berbagai Ulama: Koleksi dari sumber-sumber terpercaya.</motion.li>
+          </motion.ul>
+          <motion.p
+            className="text-xl leading-relaxed font-semibold text-yellow-300"
+            initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.5 }}
+            transition={{ duration: 0.7, delay: 0.8, ease: "easeOut" }}
+          >
             Mari kita jadikan setiap bacaan sebagai langkah mendekatkan diri kepada-Nya.
-          </p>
+          </motion.p>
         </div>
 
         <div className="bg-black rounded-2xl shadow-2xl overflow-hidden">
@@ -224,9 +281,13 @@ const TausiyahPage = () => {
 
           <div className="p-8">
             {error && (
-              <div className="mb-6 p-4 bg-red-600/20 border border-red-500 rounded-lg text-red-400 text-center text-sm">
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-6 p-4 bg-red-600/20 border border-red-500 rounded-lg text-red-400 text-center text-sm"
+              >
                 {error}
-              </div>
+              </motion.div>
             )}
 
             {isLoading ? (
@@ -237,12 +298,20 @@ const TausiyahPage = () => {
             ) : tausiyahList.length === 0 ? (
               <p className="text-center text-gray-400 py-8 text-lg">Belum ada tausiyah yang tersedia saat ini.</p>
             ) : (
-              <div className="grid gap-6">
+              <motion.div
+                className="grid gap-6"
+                initial="hidden"
+                animate="visible"
+                variants={listContainerVariants}
+              >
                 {tausiyahList.map((item) => (
-                  <div
+                  <motion.div
                     key={item.id}
                     onClick={() => router.push(`/tausiyah/${item.id}`)}
                     className="flex flex-col p-6 border border-gray-700 rounded-lg shadow-md bg-[#1A1614] text-white cursor-pointer hover:bg-[#2a2421] transition-colors duration-200"
+                    variants={listItemVariants}
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
                   >
                     <h2 className="text-2xl font-bold text-yellow-400 mb-3">{item.judul}</h2>
                     <p className="text-gray-300 mb-4 line-clamp-3 leading-relaxed">{item.isi}</p>
@@ -286,9 +355,9 @@ const TausiyahPage = () => {
                         </button>
                       </div>
                     )}
-                  </div>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             )}
           </div>
         </div>

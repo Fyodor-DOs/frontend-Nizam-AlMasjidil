@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api, { setAuthToken } from '@/utils/api';
 import Navbar from '@/components/Navbar';
+import { motion, AnimatePresence } from 'framer-motion'; // Import motion and AnimatePresence
 import {
   Dialog,
   DialogContent,
@@ -12,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button"; // Assuming Button component is styled consistently
+import { Button } from "@/components/ui/button";
 
 // --- Type Definitions (Kept as is, good practice) ---
 type Kegiatan = {
@@ -32,6 +33,41 @@ interface User {
   role: string;
 }
 // --- End Type Definitions ---
+
+// --- Framer Motion Variants ---
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.7 } },
+};
+
+const slideInFromLeft = {
+  hidden: { x: -100, opacity: 0 },
+  visible: { x: 0, opacity: 1, transition: { duration: 0.8, ease: "easeOut" } },
+};
+
+const slideInFromRight = {
+  hidden: { x: 100, opacity: 0 },
+  visible: { x: 0, opacity: 1, transition: { duration: 0.8, ease: "easeOut" } },
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 10,
+    },
+  },
+};
+
+const modalVariants = {
+  hidden: { opacity: 0, scale: 0.8, y: -50 },
+  visible: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 200, damping: 25 } },
+  exit: { opacity: 0, scale: 0.8, y: -50, transition: { duration: 0.3 } },
+};
 
 const KegiatanPage = () => {
   const [kegiatanList, setKegiatanList] = useState<Kegiatan[]>([]);
@@ -199,62 +235,101 @@ const KegiatanPage = () => {
       <Navbar role={userRole} user={user} />
 
       {/* Hero Section (Banner) */}
-      <section className="relative h-96 md:h-[500px] w-full flex items-center justify-center overflow-hidden">
+      <motion.section
+        className="relative h-96 md:h-[500px] w-full flex items-center justify-center overflow-hidden"
+        initial="hidden"
+        animate="visible"
+        variants={fadeIn}
+      >
         <img
           src="/images/masjid7.jpg"
           alt="Masjid"
-          className="absolute inset-0 w-full h-full object-cover object-center opacity-40"
+          className="absolute inset-0 w-full h-full object-cover object-center opacity-40 animate-zoom-in"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#1A1614] via-[#1A1614]/60 to-transparent"></div>
         <div className="relative z-10 text-center p-4 max-w-4xl mx-auto">
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold leading-tight text-white drop-shadow-2xl animate-fade-in-down">
+          <motion.h1
+            className="text-4xl sm:text-5xl md:text-7xl font-extrabold leading-tight text-white drop-shadow-2xl"
+            initial={{ y: -50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
             Jadwal Kegiatan Masjid
-          </h1>
-          <p className="mt-4 text-lg sm:text-xl md:text-2xl font-light text-gray-200 animate-fade-in-up">
+          </motion.h1>
+          <motion.p
+            className="mt-4 text-lg sm:text-xl md:text-2xl font-light text-gray-200"
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+          >
             Ikuti berbagai program dan acara Islami di masjid kami.
-          </p>
+          </motion.p>
         </div>
-      </section>
+      </motion.section>
 
       {/* Main Content - Description and Kegiatan List */}
-      {/* Changed `items-start` to `items-stretch` and added `relative` to main for proper positioning */}
       <main className="container mx-auto px-4 md:px-8 py-16 flex flex-col lg:flex-row gap-12 lg:gap-16 items-stretch flex-grow relative">
-        {/* Description Section - Removed sticky, added flex and grow */}
-        <section className="w-full lg:w-2/5 text-center lg:text-left flex flex-col justify-between">
-          <div> {/* This div wraps the text content */}
+        {/* Description Section */}
+        <motion.section
+          className="w-full lg:w-2/5 text-center lg:text-left flex flex-col justify-between"
+          initial="hidden"
+          animate="visible"
+          variants={slideInFromLeft}
+        >
+          <div>
             <h2 className="text-3xl sm:text-4xl font-bold mb-6 text-yellow-400">
               Semarakkan Syiar Islam
             </h2>
             <p className="text-base sm:text-lg leading-relaxed mb-6 text-gray-300">
               Halaman ini adalah pusat informasi untuk semua kegiatan masjid, mulai dari kajian rutin, pengajian akbar, hingga acara sosial dan peringatan hari besar Islam. Pastikan Anda tidak melewatkan kesempatan untuk memperdalam ilmu agama dan mempererat tali silaturahmi.
             </p>
-            <ul className="list-disc list-inside text-base sm:text-lg space-y-3 mb-8 text-gray-300">
-              <li><strong className="text-yellow-300">Kajian Rutin:</strong> Jadwal tetap untuk memperdalam pemahaman agama.</li>
-              <li><strong className="text-yellow-300">Acara Spesial:</strong> Peringatan hari besar dan program tematik.</li>
-              <li><strong className="text-yellow-300">Kegiatan Sosial:</strong> Bakti sosial, santunan, dan program kemasyarakatan.</li>
-              <li><strong className="text-yellow-300">Informasi Detail:</strong> Waktu, lokasi, dan deskripsi lengkap setiap kegiatan.</li>
-            </ul>
+            <motion.ul
+              className="list-disc list-inside text-base sm:text-lg space-y-3 mb-8 text-gray-300"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                visible: {
+                  transition: {
+                    staggerChildren: 0.1,
+                  },
+                },
+              }}
+            >
+              <motion.li variants={itemVariants}><strong className="text-yellow-300">Kajian Rutin:</strong> Jadwal tetap untuk memperdalam pemahaman agama.</motion.li>
+              <motion.li variants={itemVariants}><strong className="text-yellow-300">Acara Spesial:</strong> Peringatan hari besar dan program tematik.</motion.li>
+              <motion.li variants={itemVariants}><strong className="text-yellow-300">Kegiatan Sosial:</strong> Bakti sosial, santunan, dan program kemasyarakatan.</motion.li>
+              <motion.li variants={itemVariants}><strong className="text-yellow-300">Informasi Detail:</strong> Waktu, lokasi, dan deskripsi lengkap setiap kegiatan.</motion.li>
+            </motion.ul>
             <p className="text-lg sm:text-xl leading-relaxed font-semibold text-yellow-300">
               Bergabunglah dengan kami dalam setiap langkah menuju kebaikan.
             </p>
           </div>
           {/* "Kembali ke Beranda" Button moved inside this section */}
-          {/* Added mt-auto to push it to the bottom of the flex container */}
-          <div className="text-center py-12 bg-[#1A1614] lg:pt-0 lg:pb-0 lg:mt-auto">
+          <motion.div
+            className="text-center py-12 bg-[#1A1614] lg:pt-0 lg:pb-0 lg:mt-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.6 }}
+          >
             <Button
               onClick={() => router.push('/dashboard')}
-              className="bg-yellow-400 text-black font-bold py-3 px-8 rounded-full hover:bg-yellow-500 transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-lg"
+              className="bg-yellow-400 text-black font-bold py-3 px-8 rounded-full hover:bg-yellow-500 transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-lg animate-bounce-subtle"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z" />
               </svg>
               Kembali ke Beranda
             </Button>
-          </div>
-        </section>
+          </motion.div>
+        </motion.section>
 
         {/* Kegiatan List Section */}
-        <section className="w-full lg:w-3/5 bg-black rounded-2xl shadow-2xl overflow-hidden border border-gray-800">
+        <motion.section
+          className="w-full lg:w-3/5 bg-black rounded-2xl shadow-2xl overflow-hidden border border-gray-800"
+          initial="hidden"
+          animate="visible"
+          variants={slideInFromRight}
+        >
           <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-black py-5 px-6 flex justify-between items-center relative">
             <h3 className="font-extrabold text-xl sm:text-2xl">Daftar Kegiatan Terbaru</h3>
             {(userRole === 'admin' || userRole === 'takmir') && (
@@ -274,31 +349,61 @@ const KegiatanPage = () => {
           </div>
 
           <div className="p-6 sm:p-8">
-            {error && (
-              <div className="mb-6 p-4 bg-red-600/20 border border-red-500 rounded-lg text-red-400 text-center text-sm font-medium animate-fade-in">
-                {error}
-              </div>
-            )}
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  className="mb-6 p-4 bg-red-600/20 border border-red-500 rounded-lg text-red-400 text-center text-sm font-medium"
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                >
+                  {error}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {isLoading ? (
               <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-yellow-400 border-t-transparent"></div>
+                <motion.div
+                  className="inline-block rounded-full h-12 w-12 border-4 border-yellow-400 border-t-transparent"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                ></motion.div>
                 <p className="mt-6 text-gray-400 text-xl">Memuat daftar kegiatan...</p>
               </div>
             ) : kegiatanList.length === 0 ? (
-              <div className="text-center py-12">
+              <motion.div
+                className="text-center py-12"
+                initial="hidden"
+                animate="visible"
+                variants={fadeIn}
+              >
                 <p className="text-gray-400 text-xl">Belum ada kegiatan yang tersedia saat ini.</p>
                 {(userRole === 'admin' || userRole === 'takmir') && (
                   <p className="mt-4 text-gray-500 text-md">Gunakan tombol "Tambah Kegiatan" untuk mulai menambahkan.</p>
                 )}
-              </div>
+              </motion.div>
             ) : (
-              <div className="grid gap-8">
-                {kegiatanList.map((item) => (
-                  <div
+              <motion.div
+                className="grid gap-8"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  visible: {
+                    transition: {
+                      staggerChildren: 0.1,
+                    },
+                  },
+                }}
+              >
+                {kegiatanList.map((item, index) => (
+                  <motion.div
                     key={item.id}
                     onClick={() => handleShowDetail(item)}
                     className="flex flex-col sm:flex-row items-start gap-6 p-6 border border-gray-700 rounded-xl shadow-lg bg-[#1A1614] text-white cursor-pointer hover:bg-[#2a2421] transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-2xl"
+                    variants={itemVariants}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   >
                     {item.gambar && (
                       <div className="flex-shrink-0 w-full sm:w-48 h-40 sm:h-36 overflow-hidden rounded-lg">
@@ -325,7 +430,7 @@ const KegiatanPage = () => {
                           </svg>
                           <span className="font-semibold text-yellow-400">Waktu:</span> {item.waktu}
                         </div>
-                        <div className="flex items-center gap-2 col-span-full"> {/* Span full width for location */}
+                        <div className="flex items-center gap-2 col-span-full">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                           </svg>
@@ -333,251 +438,312 @@ const KegiatanPage = () => {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             )}
           </div>
-        </section>
+        </motion.section>
       </main>
 
-      {/* The rest of your modals remain outside the main content flow */}
-
       {/* Modal Tambah / Edit */}
-      {showModal && (userRole === 'admin' || userRole === 'takmir') && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="border border-gray-700 bg-[#1A1614] p-8 rounded-xl shadow-2xl w-full max-w-lg text-white transform scale-95 animate-scale-up-center transition-transform duration-300">
-            <h2 className="text-3xl font-bold mb-8 text-center text-yellow-400">
-              {editMode ? 'Edit Kegiatan' : 'Buat Kegiatan Baru'}
-            </h2>
-            {error && (
-              <div className="mb-6 p-4 bg-red-600/20 border border-red-500 rounded-lg text-red-400 text-center text-sm font-medium">
-                {error}
-              </div>
-            )}
-            <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); handleCreateOrUpdateKegiatan(); }}>
-              <div>
-                <label htmlFor="nama_kegiatan" className="block mb-2 font-semibold text-gray-300 text-lg">Nama Kegiatan</label>
-                <input
-                  type="text"
-                  id="nama_kegiatan"
-                  placeholder="Contoh: Kajian Fiqih Subuh"
-                  value={formData.nama_kegiatan}
-                  onChange={(e) => setFormData({ ...formData, nama_kegiatan: e.target.value })}
-                  className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 text-lg outline-none transition duration-200"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="deskripsi" className="block mb-2 font-semibold text-gray-300 text-lg">Deskripsi</label>
-                <textarea
-                  id="deskripsi"
-                  placeholder="Berikan deskripsi lengkap tentang kegiatan ini..."
-                  value={formData.deskripsi}
-                  onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
-                  className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 h-36 text-lg outline-none transition duration-200 resize-y"
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <AnimatePresence>
+        {showModal && (userRole === 'admin' || userRole === 'takmir') && (
+          <motion.div
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="border border-gray-700 bg-[#1A1614] p-8 rounded-xl shadow-2xl w-full max-w-lg text-white"
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <h2 className="text-3xl font-bold mb-8 text-center text-yellow-400">
+                {editMode ? 'Edit Kegiatan' : 'Buat Kegiatan Baru'}
+              </h2>
+              {error && (
+                <div className="mb-6 p-4 bg-red-600/20 border border-red-500 rounded-lg text-red-400 text-center text-sm font-medium">
+                  {error}
+                </div>
+              )}
+              <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); handleCreateOrUpdateKegiatan(); }}>
                 <div>
-                  <label htmlFor="tanggal" className="block mb-2 font-semibold text-gray-300 text-lg">Tanggal</label>
+                  <label htmlFor="nama_kegiatan" className="block mb-2 font-semibold text-gray-300 text-lg">Nama Kegiatan</label>
                   <input
-                    type="date"
-                    id="tanggal"
-                    value={formData.tanggal}
-                    onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })}
-                    className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white focus:ring-yellow-500 focus:border-yellow-500 text-lg outline-none transition duration-200"
+                    type="text"
+                    id="nama_kegiatan"
+                    placeholder="Contoh: Kajian Fiqih Subuh"
+                    value={formData.nama_kegiatan}
+                    onChange={(e) => setFormData({ ...formData, nama_kegiatan: e.target.value })}
+                    className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 text-lg outline-none transition duration-200"
                     required
                   />
                 </div>
                 <div>
-                  <label htmlFor="waktu" className="block mb-2 font-semibold text-gray-300 text-lg">Waktu</label>
-                  <input
-                    type="time"
-                    id="waktu"
-                    value={formData.waktu}
-                    onChange={(e) => setFormData({ ...formData, waktu: e.target.value })}
-                    className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white focus:ring-yellow-500 focus:border-yellow-500 text-lg outline-none transition duration-200"
+                  <label htmlFor="deskripsi" className="block mb-2 font-semibold text-gray-300 text-lg">Deskripsi</label>
+                  <textarea
+                    id="deskripsi"
+                    placeholder="Berikan deskripsi lengkap tentang kegiatan ini..."
+                    value={formData.deskripsi}
+                    onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
+                    className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 h-36 text-lg outline-none transition duration-200 resize-y"
                     required
                   />
                 </div>
-              </div>
-              <div>
-                <label htmlFor="lokasi" className="block mb-2 font-semibold text-gray-300 text-lg">Lokasi</label>
-                <input
-                  type="text"
-                  id="lokasi"
-                  placeholder="Contoh: Ruang Utama Masjid Al-Hikmah"
-                  value={formData.lokasi}
-                  onChange={(e) => setFormData({ ...formData, lokasi: e.target.value })}
-                  className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 text-lg outline-none transition duration-200"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="gambar" className="block mb-2 font-semibold text-gray-300 text-lg">Gambar (Opsional)</label>
-                <input
-                  type="file"
-                  id="gambar"
-                  accept="image/*"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files[0]) {
-                      setGambar(e.target.files[0]);
-                    }
-                  }}
-                  className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-500 file:text-black hover:file:bg-yellow-600 focus:ring-yellow-500 focus:border-yellow-500 cursor-pointer outline-none transition duration-200"
-                />
-                {editMode && selectedKegiatan?.gambar && !gambar && (
-                  <p className="mt-2 text-sm text-gray-400">Gambar saat ini: <span className="italic">{selectedKegiatan.gambar.split('/').pop()}</span></p>
-                )}
-                {gambar && (
-                  <p className="mt-2 text-sm text-gray-400">Gambar baru dipilih: <span className="italic">{gambar.name}</span></p>
-                )}
-              </div>
-
-              <div className="flex justify-end space-x-4 pt-4">
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setShowModal(false);
-                    setEditMode(false);
-                    setFormData({ nama_kegiatan: '', deskripsi: '', tanggal: '', waktu: '', lokasi: '' });
-                    setGambar(null);
-                    setError(null);
-                  }}
-                  className="px-7 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200"
-                  disabled={isLoading}
-                >
-                  Batal
-                </Button>
-                <Button
-                  type="submit"
-                  className="px-7 py-3 bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <svg className="animate-spin h-5 w-5 text-gray-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      <span>Menyimpan...</span>
-                    </>
-                  ) : (
-                    editMode ? 'Simpan Perubahan' : 'Buat Kegiatan'
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="tanggal" className="block mb-2 font-semibold text-gray-300 text-lg">Tanggal</label>
+                    <input
+                      type="date"
+                      id="tanggal"
+                      value={formData.tanggal}
+                      onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })}
+                      className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white focus:ring-yellow-500 focus:border-yellow-500 text-lg outline-none transition duration-200"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="waktu" className="block mb-2 font-semibold text-gray-300 text-lg">Waktu</label>
+                    <input
+                      type="time"
+                      id="waktu"
+                      value={formData.waktu}
+                      onChange={(e) => setFormData({ ...formData, waktu: e.target.value })}
+                      className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white focus:ring-yellow-500 focus:border-yellow-500 text-lg outline-none transition duration-200"
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="lokasi" className="block mb-2 font-semibold text-gray-300 text-lg">Lokasi</label>
+                  <input
+                    type="text"
+                    id="lokasi"
+                    placeholder="Contoh: Ruang Utama Masjid Al-Hikmah"
+                    value={formData.lokasi}
+                    onChange={(e) => setFormData({ ...formData, lokasi: e.target.value })}
+                    className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 text-lg outline-none transition duration-200"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="gambar" className="block mb-2 font-semibold text-gray-300 text-lg">Gambar (Opsional)</label>
+                  <input
+                    type="file"
+                    id="gambar"
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setGambar(e.target.files[0]);
+                      }
+                    }}
+                    className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-500 file:text-black hover:file:bg-yellow-600 focus:ring-yellow-500 focus:border-yellow-500 cursor-pointer outline-none transition duration-200"
+                  />
+                  {editMode && selectedKegiatan?.gambar && !gambar && (
+                    <p className="mt-2 text-sm text-gray-400">Gambar saat ini: <span className="italic">{selectedKegiatan.gambar.split('/').pop()}</span></p>
                   )}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                  {gambar && (
+                    <p className="mt-2 text-sm text-gray-400">Gambar baru dipilih: <span className="italic">{gambar.name}</span></p>
+                  )}
+                </div>
+
+                <div className="flex justify-end space-x-4 pt-4">
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setShowModal(false);
+                      setEditMode(false);
+                      setFormData({ nama_kegiatan: '', deskripsi: '', tanggal: '', waktu: '', lokasi: '' });
+                      setGambar(null);
+                      setError(null);
+                    }}
+                    className="px-7 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200"
+                    disabled={isLoading}
+                  >
+                    Batal
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="px-7 py-3 bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5 text-gray-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Menyimpan...</span>
+                      </>
+                    ) : (
+                      editMode ? 'Simpan Perubahan' : 'Buat Kegiatan'
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Modal Detail */}
-      {selectedKegiatan && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="border border-gray-700 bg-[#1A1614] p-8 rounded-xl shadow-2xl w-full max-w-lg text-white transform scale-95 animate-scale-up-center transition-transform duration-300">
-            <h2 className="text-3xl font-bold mb-6 text-center text-yellow-400">{selectedKegiatan.nama_kegiatan}</h2>
-            {selectedKegiatan.gambar && (
-              <div className="mb-6 rounded-lg overflow-hidden border border-gray-700">
-                <img
-                  src={`http://localhost:8000/storage/${selectedKegiatan.gambar}`}
-                  alt={selectedKegiatan.nama_kegiatan}
-                  className="w-full h-64 object-cover object-center"
-                />
-              </div>
-            )}
-            <div className="space-y-4 text-lg">
-              <div>
-                <span className="text-yellow-400 font-bold">Deskripsi:</span>
-                <p className="text-gray-300 mt-2 leading-relaxed">{selectedKegiatan.deskripsi}</p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6">
-                <div>
-                  <span className="text-yellow-400 font-bold">Tanggal:</span>
-                  <p className="text-gray-300 mt-1">{selectedKegiatan.tanggal}</p>
-                </div>
-                <div>
-                  <span className="text-yellow-400 font-bold">Waktu:</span>
-                  <p className="text-gray-300 mt-1">{selectedKegiatan.waktu}</p>
-                </div>
-                <div className="col-span-full">
-                  <span className="text-yellow-400 font-bold">Lokasi:</span>
-                  <p className="text-gray-300 mt-1">{selectedKegiatan.lokasi}</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row justify-between gap-4 mt-10">
-              <Button
-                onClick={() => setSelectedKegiatan(null)}
-                className="px-7 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full sm:w-auto"
-              >
-                Tutup
-              </Button>
-              {(userRole === 'admin' || userRole === 'takmir') && (
-                <div className="flex gap-4 w-full sm:w-auto">
-                  <Button
-                    onClick={handleEdit}
-                    className="px-7 py-3 bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-md text-lg font-semibold transition-colors duration-200 w-full"
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setShowDeleteDialog(true);
-                    }}
-                    className="px-7 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full"
-                  >
-                    Hapus
-                  </Button>
-                </div>
+      <AnimatePresence>
+        {selectedKegiatan && (
+          <motion.div
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="border border-gray-700 bg-[#1A1614] p-8 rounded-xl shadow-2xl w-full max-w-lg text-white"
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <h2 className="text-3xl font-bold mb-6 text-center text-yellow-400">{selectedKegiatan.nama_kegiatan}</h2>
+              {selectedKegiatan.gambar && (
+                <motion.div
+                  className="mb-6 rounded-lg overflow-hidden border border-gray-700"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2, duration: 0.5 }}
+                >
+                  <img
+                    src={`http://localhost:8000/storage/${selectedKegiatan.gambar}`}
+                    alt={selectedKegiatan.nama_kegiatan}
+                    className="w-full h-64 object-cover object-center"
+                  />
+                </motion.div>
               )}
-            </div>
-          </div>
-        </div>
-      )}
+              <motion.div
+                className="space-y-4 text-lg"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  visible: {
+                    transition: {
+                      staggerChildren: 0.05,
+                    },
+                  },
+                }}
+              >
+                <motion.div variants={itemVariants}>
+                  <span className="text-yellow-400 font-bold">Deskripsi:</span>
+                  <p className="text-gray-300 mt-2 leading-relaxed">{selectedKegiatan.deskripsi}</p>
+                </motion.div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6">
+                  <motion.div variants={itemVariants}>
+                    <span className="text-yellow-400 font-bold">Tanggal:</span>
+                    <p className="text-gray-300 mt-1">{selectedKegiatan.tanggal}</p>
+                  </motion.div>
+                  <motion.div variants={itemVariants}>
+                    <span className="text-yellow-400 font-bold">Waktu:</span>
+                    <p className="text-gray-300 mt-1">{selectedKegiatan.waktu}</p>
+                  </motion.div>
+                  <motion.div variants={itemVariants} className="col-span-full">
+                    <span className="text-yellow-400 font-bold">Lokasi:</span>
+                    <p className="text-gray-300 mt-1">{selectedKegiatan.lokasi}</p>
+                  </motion.div>
+                </div>
+              </motion.div>
+              <div className="flex flex-col sm:flex-row justify-between gap-4 mt-10">
+                <Button
+                  onClick={() => setSelectedKegiatan(null)}
+                  className="px-7 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full sm:w-auto"
+                >
+                  Tutup
+                </Button>
+                {(userRole === 'admin' || userRole === 'takmir') && (
+                  <div className="flex gap-4 w-full sm:w-auto">
+                    <Button
+                      onClick={handleEdit}
+                      className="px-7 py-3 bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-md text-lg font-semibold transition-colors duration-200 w-full"
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setShowDeleteDialog(true);
+                      }}
+                      className="px-7 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full"
+                    >
+                      Hapus
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="bg-[#1A1614] border-gray-700 text-white shadow-xl p-8 rounded-xl max-w-md animate-fade-in animate-scale-up-center">
-          <DialogHeader className="text-center">
-            <DialogTitle className="text-3xl font-bold text-yellow-400 mb-2">Konfirmasi Hapus Kegiatan</DialogTitle>
-            <DialogDescription className="text-gray-300 text-lg">
-              Apakah Anda yakin ingin menghapus kegiatan <strong className="text-yellow-300">"{selectedKegiatan?.nama_kegiatan}"</strong>? Tindakan ini tidak dapat dibatalkan.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
-            <Button
-              onClick={() => {
-                setShowDeleteDialog(false);
-                setSelectedKegiatan(null);
-              }}
-              className="px-7 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full sm:w-auto"
-              disabled={isLoading}
+      <AnimatePresence>
+        {showDeleteDialog && (
+          <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+            <DialogContent
+              className="bg-[#1A1614] border-gray-700 text-white shadow-xl p-8 rounded-xl max-w-md"
+              asChild // This is important for DialogContent to act as a child of motion.div
             >
-              Batal
-            </Button>
-            <Button
-              onClick={() => selectedKegiatan && handleDeleteKegiatan(selectedKegiatan.id)}
-              className="px-7 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span>Menghapus...</span>
-                </>
-              ) : (
-                'Hapus'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              <motion.div
+                variants={modalVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                <DialogHeader className="text-center">
+                  <DialogTitle className="text-3xl font-bold text-yellow-400 mb-2">Konfirmasi Hapus Kegiatan</DialogTitle>
+                  <DialogDescription className="text-gray-300 text-lg">
+                    Apakah Anda yakin ingin menghapus kegiatan <strong className="text-yellow-300">"{selectedKegiatan?.nama_kegiatan}"</strong>? Tindakan ini tidak dapat dibatalkan.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
+                  <Button
+                    onClick={() => {
+                      setShowDeleteDialog(false);
+                      setSelectedKegiatan(null);
+                    }}
+                    className="px-7 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full sm:w-auto"
+                    disabled={isLoading}
+                  >
+                    Batal
+                  </Button>
+                  <Button
+                    onClick={() => selectedKegiatan && handleDeleteKegiatan(selectedKegiatan.id)}
+                    className="px-7 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <motion.svg
+                          className="h-5 w-5 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        >
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </motion.svg>
+                        <span>Menghapus...</span>
+                      </>
+                    ) : (
+                      'Hapus'
+                    )}
+                  </Button>
+                </DialogFooter>
+              </motion.div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { motion } from 'framer-motion'; // Import motion from framer-motion
 
 interface User {
   id: number;
@@ -31,7 +32,7 @@ const UserManagementPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [loggedInUser, setLoggedInUser] = useState<User | null>(null); // Mengubah nama state agar lebih jelas
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
@@ -67,7 +68,7 @@ const UserManagementPage = () => {
   const fetchUserData = async () => {
     try {
       const response = await api.get('/user');
-      setUser(response.data);
+      setLoggedInUser(response.data); // Set data user yang sedang login
     } catch (err) {
       console.error('Error fetching user data:', err);
     }
@@ -91,9 +92,17 @@ const UserManagementPage = () => {
       setIsLoading(true);
       setError(null);
       await api.delete(`/users/${id}`);
-      setUsers(users.filter((user) => user.id !== id));
+      setUsers(users.filter((userItem) => userItem.id !== id)); // Mengubah nama variabel user menjadi userItem untuk menghindari konflik
       setShowDeleteDialog(false);
       setUserToDelete(null);
+
+      // Logika tambahan: Jika user yang dihapus adalah user yang sedang login, maka logout
+      if (loggedInUser && id === loggedInUser.id) {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('role');
+        router.push('/login'); // Redirect ke halaman login setelah menghapus diri sendiri
+      }
+
     } catch (err: any) {
       setError(err.response?.data?.message || 'Gagal menghapus user');
     } finally {
@@ -133,32 +142,61 @@ const UserManagementPage = () => {
     }
   };
 
+  // Framer Motion variants for staggered list animations
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+  };
+
   return (
     <div className="min-h-screen bg-[#1A1614] text-white">
-      <Navbar role={userRole} user={user}/>
+      <Navbar role={userRole} user={loggedInUser} /> {/* Menggunakan loggedInUser */}
 
       {/* Hero Section */}
       <div className="relative h-96 w-full flex items-center justify-center overflow-hidden">
-        <img
-          src="/images/masjid7.jpg" // Use the consistent masjid image
+        <motion.img
+          src="/images/masjid7.jpg"
           alt="Masjid"
           className="absolute inset-0 w-full h-full object-cover opacity-50"
+          initial={{ opacity: 0, scale: 1.1 }}
+          animate={{ opacity: 0.5, scale: 1 }}
+          transition={{ duration: 0.8 }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#1A1614] via-[#1A1614]/50 to-transparent"></div>
-        <div className="relative z-10 text-center p-4">
+        <motion.div
+          className="relative z-10 text-center p-4"
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.3 }}
+        >
           <h1 className="text-5xl md:text-6xl font-extrabold leading-tight text-white drop-shadow-lg">
             Manajemen User
           </h1>
           <p className="mt-4 text-xl md:text-2xl font-light text-gray-200">
             Kelola akses pengguna sistem masjid Anda.
           </p>
-        </div>
+        </motion.div>
       </div>
 
       {/* Main Content - Description and User List */}
       <div className="container mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
         {/* Description Section */}
-        <div className="text-center md:text-left">
+        <motion.div
+          className="text-center md:text-left"
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7, delay: 0.5 }}
+        >
           <h2 className="text-4xl font-bold mb-6 text-yellow-400">
             Pengelolaan Akun Pengguna
           </h2>
@@ -173,36 +211,50 @@ const UserManagementPage = () => {
           <p className="text-xl leading-relaxed font-semibold text-yellow-300">
             Pastikan hanya user yang berwenang yang memiliki akses ke sistem ini.
           </p>
-          {/* "Kembali ke Dashboard" Button - Moved here to align with description */}
-          <button
+          {/* "Kembali ke Dashboard" Button */}
+          <motion.button
             onClick={() => router.push('/dashboard')}
             className="mt-8 bg-yellow-400 text-black font-semibold py-3 px-6 rounded-full hover:bg-yellow-500 transition-colors duration-200 shadow-md hover:shadow-lg inline-flex items-center justify-center gap-2"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             ← Kembali ke Dashboard
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
 
         {/* User List Section (resembling donation form card) */}
-        <div className="bg-black rounded-2xl shadow-2xl overflow-hidden">
+        <motion.div
+          className="bg-black rounded-2xl shadow-2xl overflow-hidden"
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7, delay: 0.7 }}
+        >
           <div className="bg-yellow-400 text-black py-4 px-6 text-center font-bold text-lg relative">
             Daftar Akun User
-            <button
+            <motion.button
               onClick={() => {
                 setShowModal(true);
                 setError(null); // Clear previous errors
                 setNama(''); setEmail(''); setPassword(''); // Reset form fields
               }}
               className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-semibold transition-colors duration-200"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               Tambah User
-            </button>
+            </motion.button>
           </div>
 
           <div className="p-8">
             {error && (
-              <div className="mb-6 p-4 bg-red-600/20 border border-red-500 rounded-lg text-red-400 text-center text-sm">
+              <motion.div
+                className="mb-6 p-4 bg-red-600/20 border border-red-500 rounded-lg text-red-400 text-center text-sm"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
                 {error}
-              </div>
+              </motion.div>
             )}
 
             {isLoading ? (
@@ -211,7 +263,14 @@ const UserManagementPage = () => {
                 <p className="mt-4 text-gray-400 text-lg">Memuat data user...</p>
               </div>
             ) : users.length === 0 ? (
-              <p className="text-center text-gray-400 py-8 text-lg">Tidak ada user yang terdaftar.</p>
+              <motion.p
+                className="text-center text-gray-400 py-8 text-lg"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                Tidak ada user yang terdaftar.
+              </motion.p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-700">
@@ -224,47 +283,65 @@ const UserManagementPage = () => {
                       <th className="px-4 py-3 text-left text-sm font-semibold uppercase tracking-wider">Aksi</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-800">
-                    {users.map((user) => (
-                      <tr key={user.id} className="hover:bg-[#2a2421] transition-colors duration-150">
-                        <td className="px-4 py-4 text-gray-300 text-sm">{user.id}</td>
+                  <motion.tbody
+                    className="divide-y divide-gray-800"
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                  >
+                    {users.map((userItem) => ( // Mengubah nama variabel user menjadi userItem untuk menghindari konflik
+                      <motion.tr
+                        key={userItem.id}
+                        className="hover:bg-[#2a2421] transition-colors duration-150"
+                        variants={itemVariants}
+                      >
+                        <td className="px-4 py-4 text-gray-300 text-sm">{userItem.id}</td>
                         <td className="px-4 py-4">
-                          <span className="text-yellow-400 font-medium text-sm">{user.nama}</span>
+                          <span className="text-yellow-400 font-medium text-sm">{userItem.nama}</span>
                         </td>
-                        <td className="px-4 py-4 text-gray-300 text-sm">{user.email}</td>
+                        <td className="px-4 py-4 text-gray-300 text-sm">{userItem.email}</td>
                         <td className="px-4 py-4">
                           <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-400/20 text-yellow-400 capitalize">
-                            {user.role}
+                            {userItem.role}
                           </span>
                         </td>
                         <td className="px-4 py-4">
-                          {/* Prevent deleting the currently logged-in user if their ID matches */}
-                          {user.id === user?.id ? (
-                            <span className="text-gray-500 text-sm">Tidak bisa menghapus diri sendiri</span>
-                          ) : (
-                            <button
-                              onClick={() => confirmDelete(user)}
+                            <motion.button
+                              onClick={() => confirmDelete(userItem)}
                               className="text-red-400 hover:text-red-300 text-sm font-medium transition-colors duration-200"
                               disabled={isLoading}
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
                             >
                               Hapus
-                            </button>
-                          )}
+                            </motion.button>
                         </td>
-                      </tr>
+                      </motion.tr>
                     ))}
-                  </tbody>
+                  </motion.tbody>
                 </table>
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Modal Tambah User */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="border border-gray-700 bg-[#1A1614] p-8 rounded-lg shadow-2xl w-full max-w-md text-white transform scale-100 transition-transform duration-300">
+        <motion.div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <motion.div
+            className="border border-gray-700 bg-[#1A1614] p-8 rounded-lg shadow-2xl w-full max-w-md text-white transform scale-100 transition-transform duration-300"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
             <h2 className="text-3xl font-bold mb-6 text-center text-yellow-400">Tambah User Baru</h2>
             {error && (
               <div className="mb-6 p-4 bg-red-600/20 border border-red-500 rounded-lg text-red-400 text-center text-sm">
@@ -310,17 +387,21 @@ const UserManagementPage = () => {
               </div>
             </div>
             <div className="flex justify-end space-x-4 mt-8">
-              <button
+              <motion.button
                 onClick={() => setShowModal(false)}
                 className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200"
                 disabled={isLoading}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 Batal
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 onClick={handleCreate}
                 className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2"
                 disabled={isLoading}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 {isLoading ? (
                   <>
@@ -333,10 +414,10 @@ const UserManagementPage = () => {
                 ) : (
                   'Buat User'
                 )}
-              </button>
+              </motion.button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
 
       {/* Delete Confirmation Dialog */}
@@ -349,20 +430,24 @@ const UserManagementPage = () => {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
-            <button
+            <motion.button
               onClick={() => {
                 setShowDeleteDialog(false);
                 setUserToDelete(null);
               }}
               className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full sm:w-auto"
               disabled={isLoading}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               Batal
-            </button>
-            <button
+            </motion.button>
+            <motion.button
               onClick={() => userToDelete && handleDelete(userToDelete.id)}
               className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto"
               disabled={isLoading}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               {isLoading ? (
                 <>
@@ -375,7 +460,7 @@ const UserManagementPage = () => {
               ) : (
                 'Hapus'
               )}
-            </button>
+            </motion.button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
