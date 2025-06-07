@@ -15,6 +15,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Navbar from '@/components/Navbar';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const images = [
   '/images/masjid4.jpg',
@@ -59,12 +68,14 @@ const Dashboard = () => {
   const [totalSaldo, setTotalSaldo] = useState<number>(0);
   const [totalKegiatan, setTotalKegiatan] = useState<number>(0);
   const [donasiChartData, setDonasiChartData] = useState<any[]>([]); // This state is declared but not used for pie chart data. It should be displayDonasiData.
-  const [keuanganFilter, setKeuanganFilter] = useState('bulan');
-  const [donasiFilter, setDonasiFilter] = useState('bulan');
+  const [keuanganFilter, setKeuanganFilter] = useState('tahun');
+  const [donasiFilter, setDonasiFilter] = useState('tahun');
   const [displayKeuanganData, setDisplayKeuanganData] = useState<any[]>([]);
   const [displayDonasiData, setDisplayDonasiData] = useState<any[]>([]);
   const [prayerTimes, setPrayerTimes] = useState<any>(null);
   const [selectedCity, setSelectedCity] = useState('Malang'); // Default to Malang
+  const [selectedKegiatan, setSelectedKegiatan] = useState<any>(null);
+  const [showKegiatanDialog, setShowKegiatanDialog] = useState(false);
 
   const cities = [
     { name: 'Jakarta', value: 'Jakarta' },
@@ -369,6 +380,11 @@ const Dashboard = () => {
     setCurrentKegiatanIndex((prev) => (prev - 1 + kegiatanData.length) % kegiatanData.length);
   };
 
+  const handleKegiatanClick = (kegiatan: any) => {
+    setSelectedKegiatan(kegiatan);
+    setShowKegiatanDialog(true);
+  };
+
   return (
     <div // Changed from motion.div to div
       className="bg-[#1A1614] text-white min-h-screen flex flex-col font-sans antialiased"
@@ -537,38 +553,44 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="p-0">
               <div className="h-[250px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={displayKeuanganData} barSize={35} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
-                    <XAxis
-                      dataKey="key"
-                      stroke="#ffffff"
-                      angle={-45}
-                      textAnchor="end"
-                      height={60}
-                      interval={0}
-                      tick={{ fontSize: 11 }}
-                    />
-                    <YAxis
-                      stroke="#ffffff"
-                      tickFormatter={(value) => `Rp ${value.toLocaleString('id-ID')}`}
-                      tick={{ fontSize: 11 }}
-                      width={120}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#2A2A2A',
-                        border: '1px solid #ffffff10',
-                        borderRadius: '8px',
-                        color: '#ffffff',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-                      }}
-                      formatter={(value: number) => `Rp ${value.toLocaleString('id-ID')}`}
-                    />
-                    <Bar dataKey="pemasukan" fill="#22C55E" name="Pemasukan" radius={[4, 4, 0, 0]} activeBar={{ fill: '#3CB371' }} />
-                    <Bar dataKey="pengeluaran" fill="#EF4444" name="Pengeluaran" radius={[4, 4, 0, 0]} activeBar={{ fill: '#FA8072' }} />
-                  </BarChart>
-                </ResponsiveContainer>
+                {displayKeuanganData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={displayKeuanganData} barSize={35} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
+                      <XAxis
+                        dataKey="key"
+                        stroke="#ffffff"
+                        angle={-45}
+                        textAnchor="end"
+                        height={60}
+                        interval={0}
+                        tick={{ fontSize: 11 }}
+                      />
+                      <YAxis
+                        stroke="#ffffff"
+                        tickFormatter={(value) => `Rp ${value.toLocaleString('id-ID')}`}
+                        tick={{ fontSize: 11 }}
+                        width={120}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#2A2A2A',
+                          border: '1px solid #ffffff10',
+                          borderRadius: '8px',
+                          color: '#ffffff',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                        }}
+                        formatter={(value: number) => `Rp ${value.toLocaleString('id-ID')}`}
+                      />
+                      <Bar dataKey="pemasukan" fill="#22C55E" name="Pemasukan" radius={[4, 4, 0, 0]} activeBar={{ fill: '#3CB371' }} />
+                      <Bar dataKey="pengeluaran" fill="#EF4444" name="Pengeluaran" radius={[4, 4, 0, 0]} activeBar={{ fill: '#FA8072' }} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-gray-400">
+                    Tidak ada data keuangan untuk periode ini
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -684,27 +706,33 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={displayDonasiData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={120}
-                        fill="#8884d8"
-                        dataKey="jumlah"
-                        isAnimationActive={true}
-                        label={({ metode_pembayaran, percent }) =>
-                          `${metode_pembayaran.charAt(0).toUpperCase() + metode_pembayaran.slice(1)} ${(percent * 100).toFixed(0)}%`
-                        }
-                      >
-                        {displayDonasiData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
+                  {displayDonasiData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={displayDonasiData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={120}
+                          fill="#8884d8"
+                          dataKey="jumlah"
+                          isAnimationActive={true}
+                          label={({ metode_pembayaran, percent }) =>
+                            `${metode_pembayaran.charAt(0).toUpperCase() + metode_pembayaran.slice(1)} ${(percent * 100).toFixed(0)}%`
+                          }
+                        >
+                          {displayDonasiData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-gray-400">
+                      Tidak ada data donasi untuk periode ini
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -792,14 +820,22 @@ const Dashboard = () => {
             <CardContent>
               <div className="space-y-4">
                 <AnimatePresence mode="popLayout">
-                  {kegiatanData.slice(0, 5).map((kegiatan, index) => (
+                  {kegiatanData
+                    .filter(kegiatan => {
+                      const kegiatanDate = new Date(`${kegiatan.tanggal} ${kegiatan.waktu}`);
+                      const now = new Date();
+                      return kegiatanDate > now;
+                    })
+                    .slice(0, 5)
+                    .map((kegiatan, index) => (
                     <motion.div
-                      key={kegiatan.id || `kegiatan-${index}`} // Use a unique ID if available, fallback to index
-                      className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors"
+                      key={kegiatan.id || `kegiatan-${index}`}
+                      className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
                       initial={{ opacity: 0, y: -20 }}
                       animate={{ opacity: 1, y: 0, transition: { duration: 0.3, delay: index * 0.05 } }}
                       exit={{ opacity: 0, x: -50, transition: { duration: 0.2 } }}
                       layout
+                      onClick={() => handleKegiatanClick(kegiatan)}
                     >
                       <div className="p-2 rounded-full bg-purple-400/10">
                         <Calendar className="h-4 w-4 text-purple-400" />
@@ -810,12 +846,74 @@ const Dashboard = () => {
                       </div>
                     </motion.div>
                   ))}
+                  {kegiatanData.filter(kegiatan => {
+                    const kegiatanDate = new Date(`${kegiatan.tanggal} ${kegiatan.waktu}`);
+                    const now = new Date();
+                    return kegiatanDate > now;
+                  }).length === 0 && (
+                    <div className="text-center py-4">
+                      <p className="text-gray-400 text-sm">Tidak ada kegiatan mendatang</p>
+                    </div>
+                  )}
                 </AnimatePresence>
               </div>
             </CardContent>
           </Card>
         </div>
       </section>
+
+      <Dialog open={showKegiatanDialog} onOpenChange={setShowKegiatanDialog}>
+        <DialogContent className="bg-[#1E1E1E] border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-white">Detail Kegiatan</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Informasi lengkap tentang kegiatan
+            </DialogDescription>
+          </DialogHeader>
+          {selectedKegiatan && (
+            <div className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label className="text-gray-300">Nama Kegiatan</Label>
+                <Input
+                  value={selectedKegiatan.nama_kegiatan}
+                  disabled
+                  className="bg-[#2A2A2A] border-white/10 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-300">Tanggal</Label>
+                <Input
+                  value={selectedKegiatan.tanggal}
+                  disabled
+                  className="bg-[#2A2A2A] border-white/10 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-300">Waktu</Label>
+                <Input
+                  value={selectedKegiatan.waktu}
+                  disabled
+                  className="bg-[#2A2A2A] border-white/10 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-300">Lokasi</Label>
+                <Input
+                  value={selectedKegiatan.lokasi || '-'}
+                  disabled
+                  className="bg-[#2A2A2A] border-white/10 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-300">Deskripsi</Label>
+                <div className="p-3 bg-[#2A2A2A] border border-white/10 rounded-md text-gray-300 min-h-[100px]">
+                  {selectedKegiatan.deskripsi || '-'}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <footer className="bg-[#1A1614] border-t border-white/10 py-6 text-center text-gray-400 mt-20">
         &copy; {new Date().getFullYear()} AlMasjid Digital. All rights reserved.
