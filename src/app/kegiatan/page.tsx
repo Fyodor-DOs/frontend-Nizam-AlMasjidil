@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
-// --- Type Definitions (Kept as is, good practice) ---
 type Kegiatan = {
   id: number;
   nama_kegiatan: string;
@@ -32,9 +31,7 @@ interface User {
   email: string;
   role: string;
 }
-// --- End Type Definitions ---
 
-// --- Framer Motion Variants ---
 const fadeIn = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { duration: 0.7 } },
@@ -90,7 +87,6 @@ const KegiatanPage = () => {
 
   const router = useRouter();
 
-  // --- Effects (Kept similar, good logic) ---
   useEffect(() => {
     if (showModal || selectedKegiatan || showDeleteDialog) {
       document.body.style.overflow = 'hidden';
@@ -115,9 +111,7 @@ const KegiatanPage = () => {
       router.push('/login');
     }
   }, [router]);
-  // --- End Effects ---
 
-  // --- Data Fetching & Handlers (Minor adjustments for clarity) ---
   const fetchUserData = async () => {
     try {
       const response = await api.get('/user');
@@ -226,9 +220,8 @@ const KegiatanPage = () => {
     });
     setEditMode(true);
     setShowModal(true);
-    setSelectedKegiatan(null); // Close detail modal when opening edit modal
+    setSelectedKegiatan(null);
   };
-  // --- End Data Fetching & Handlers ---
 
   return (
     <div className="min-h-screen bg-[#1A1614] text-white flex flex-col">
@@ -687,10 +680,7 @@ const KegiatanPage = () => {
       <AnimatePresence>
         {showDeleteDialog && (
           <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-            <DialogContent
-              className="bg-[#1A1614] border-gray-700 text-white shadow-xl p-8 rounded-xl max-w-md"
-              asChild // This is important for DialogContent to act as a child of motion.div
-            >
+            <DialogContent className="bg-[#1A1614] border-gray-700 text-white shadow-xl p-8 rounded-xl max-w-md">
               <motion.div
                 variants={modalVariants}
                 initial="hidden"
