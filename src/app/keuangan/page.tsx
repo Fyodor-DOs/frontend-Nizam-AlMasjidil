@@ -253,7 +253,7 @@ const KeuanganPage = () => {
               className="bg-yellow-400 text-black font-semibold py-3 px-6 rounded-full hover:bg-yellow-500 transition-colors duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
               {...buttonHoverTap}
             >
-              ← Kembali ke Beranda
+              Kembali ke Beranda
             </motion.button>
           </motion.div>
         </motion.div>
