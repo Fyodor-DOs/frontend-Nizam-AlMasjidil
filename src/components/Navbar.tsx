@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { User, LogOut, DollarSign, Wallet, Calendar, Users, BookOpen } from 'lucide-react';
 import {
@@ -29,17 +29,37 @@ interface NavbarProps {
 
 const Navbar = ({ role, user }: NavbarProps) => {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    setIsAuthenticated(!!token);
+  }, [pathname]);
+
+  const isActive = (path: string) => {
+    return pathname === path;
+  };
+
+  const getButtonClass = (path: string) => {
+    return `flex items-center gap-2 transition-colors duration-200 font-medium ${
+      isActive(path)
+        ? 'text-yellow-400 border-b-2 border-yellow-400'
+        : 'text-gray-300 hover:text-yellow-400'
+    }`;
+  };
 
   const handleLogout = () => {
-    // Clear all auth-related data
     localStorage.removeItem('authToken');
     localStorage.removeItem('role');
     setAuthToken(null);
-    
-    // Force a hard reload to clear all state
     window.location.href = '/login';
   };
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <>
@@ -59,27 +79,42 @@ const Navbar = ({ role, user }: NavbarProps) => {
           </Link>
           <nav className="flex items-center gap-8">
             <div className="hidden md:flex items-center space-x-6">
-              <Link href="/donasi" className="flex items-center gap-2 text-gray-300 hover:text-yellow-400 transition-colors duration-200 font-medium">
+              <button 
+                onClick={() => window.location.href = '/donasi'} 
+                className={getButtonClass('/donasi')}
+              >
                 <DollarSign className="h-4 w-4" />
                 <span>Donasi</span>
-              </Link>
-              <Link href="/keuangan" className="flex items-center gap-2 text-gray-300 hover:text-yellow-400 transition-colors duration-200 font-medium">
+              </button>
+              <button 
+                onClick={() => window.location.href = '/keuangan'} 
+                className={getButtonClass('/keuangan')}
+              >
                 <Wallet className="h-4 w-4" />
                 <span>Keuangan</span>
-              </Link>
-              <Link href="/kegiatan" className="flex items-center gap-2 text-gray-300 hover:text-yellow-400 transition-colors duration-200 font-medium">
+              </button>
+              <button 
+                onClick={() => window.location.href = '/kegiatan'} 
+                className={getButtonClass('/kegiatan')}
+              >
                 <Calendar className="h-4 w-4" />
                 <span>Kegiatan</span>
-              </Link>
-              <Link href="/tausiyah" className="flex items-center gap-2 text-gray-300 hover:text-yellow-400 transition-colors duration-200 font-medium">
+              </button>
+              <button 
+                onClick={() => window.location.href = '/tausiyah'} 
+                className={getButtonClass('/tausiyah')}
+              >
                 <BookOpen className="h-4 w-4" />
                 <span>Tausiyah</span>
-              </Link>
+              </button>
               {role === 'admin' && (
-                <Link href="/users" className="flex items-center gap-2 text-gray-300 hover:text-yellow-400 transition-colors duration-200 font-medium">
+                <button 
+                  onClick={() => window.location.href = '/users'} 
+                  className={getButtonClass('/users')}
+                >
                   <Users className="h-4 w-4" />
                   <span>Kelola User</span>
-                </Link>
+                </button>
               )}
             </div>
             <DropdownMenu>
