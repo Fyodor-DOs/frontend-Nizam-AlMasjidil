@@ -116,6 +116,8 @@ const KegiatanPage = () => {
     const [userRole, setUserRole] = useState<string | null>(null);
     const [user, setUser] = useState<User | null>(null);
     const [showModal, setShowModal] = useState(false);
+    const [showReadModal, setShowReadModal] = useState(false);
+    const [selectedKegiatan, setSelectedKegiatan] = useState<Kegiatan | null>(null);
     const [editMode, setEditMode] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -127,7 +129,7 @@ const KegiatanPage = () => {
     };
 
     useEffect(() => {
-        if (showModal || showDeleteDialog) {
+        if (showModal || showDeleteDialog || showReadModal) {
             document.body.style.overflow = 'hidden';
         } else {
             document.body.style.overflow = 'unset';
@@ -136,7 +138,7 @@ const KegiatanPage = () => {
         return () => {
             document.body.style.overflow = 'unset';
         };
-    }, [showModal, showDeleteDialog]);
+    }, [showModal, showDeleteDialog, showReadModal]);
 
     useEffect(() => {
         const token = localStorage.getItem('authToken');
@@ -401,7 +403,10 @@ const KegiatanPage = () => {
                                 {kegiatanList.map((item) => (
                                     <motion.div
                                         key={item.id}
-                                        onClick={() => router.push(`/kegiatan/${item.id}`)}
+                                        onClick={() => {
+                                            setSelectedKegiatan(item);
+                                            setShowReadModal(true);
+                                        }}
                                         className="flex flex-col p-6 border border-gray-700 rounded-xl shadow-lg bg-[#1A1614] text-white cursor-pointer hover:bg-[#2a2421] transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-2xl"
                                         variants={itemVariants}
                                         whileHover={buttonHoverTap.whileHover}
@@ -516,192 +521,189 @@ const KegiatanPage = () => {
             {/* Modal Form */}
             <AnimatePresence>
                 {showModal && (
-                    <motion.div
-                        className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-                        variants={modalOverlayVariants}
-                        initial="hidden"
-                        animate="visible"
-                        exit="exit"
-                    >
-                        <motion.div
-                            className="border border-gray-700 bg-[#1A1614] p-8 rounded-xl shadow-2xl w-full max-w-lg text-white"
-                            variants={modalDialogVariants}
-                            initial="hidden"
-                            animate="visible"
-                            exit="exit"
-                        >
-                            <DialogHeader className="text-center">
-                                <DialogTitle className="text-3xl font-bold mb-2 text-yellow-400">{editMode ? 'Edit Kegiatan' : 'Tambah Kegiatan'}</DialogTitle>
-                                <DialogDescription className="text-gray-300 text-lg">
-                                    {editMode
-                                        ? 'Ubah informasi kegiatan sesuai kebutuhan.'
-                                        : 'Isi formulir berikut untuk menambahkan kegiatan baru.'}
-                                </DialogDescription>
-                            </DialogHeader>
-
-                            <AnimatePresence>
-                                {error && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: -20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -20 }}
-                                        className="mt-6 mb-4 p-4 bg-red-600/20 border border-red-500 rounded-lg text-red-400 text-center text-sm font-medium"
-                                    >
-                                        {error}
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-
-                            <form
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                    handleSave();
-                                }}
-                                className="flex flex-col gap-6 mt-6"
+                    <Dialog open={showModal} onOpenChange={setShowModal}>
+                        <DialogContent className="bg-[#1A1614] border-gray-700 text-white shadow-xl p-8 rounded-xl max-w-lg max-h-[90vh] overflow-y-auto">
+                            <motion.div
+                                variants={modalDialogVariants}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
                             >
-                                <motion.div variants={itemVariants}>
-                                    <label htmlFor="nama_kegiatan" className="block font-semibold mb-2 text-gray-300 text-lg">
-                                        Nama Kegiatan
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="nama_kegiatan"
-                                        name="nama_kegiatan"
-                                        value={formData.nama_kegiatan}
-                                        onChange={(e) => setFormData({ ...formData, nama_kegiatan: e.target.value })}
-                                        required
-                                        className="w-full rounded-md border border-gray-600 px-4 py-3 bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 outline-none text-lg transition duration-200"
-                                        placeholder="Nama kegiatan"
-                                    />
-                                </motion.div>
+                                <DialogHeader className="text-center">
+                                    <DialogTitle className="text-3xl font-bold mb-2 text-yellow-400">
+                                        {editMode ? 'Edit Kegiatan' : 'Tambah Kegiatan'}
+                                    </DialogTitle>
+                                    <DialogDescription className="text-gray-300 text-lg">
+                                        {editMode
+                                            ? 'Ubah informasi kegiatan sesuai kebutuhan.'
+                                            : 'Isi formulir berikut untuk menambahkan kegiatan baru.'}
+                                    </DialogDescription>
+                                </DialogHeader>
 
-                                <motion.div variants={itemVariants}>
-                                    <label htmlFor="deskripsi" className="block font-semibold mb-2 text-gray-300 text-lg">
-                                        Deskripsi
-                                    </label>
-                                    <textarea
-                                        id="deskripsi"
-                                        name="deskripsi"
-                                        rows={4}
-                                        value={formData.deskripsi}
-                                        onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
-                                        required
-                                        className="w-full rounded-md border border-gray-600 px-4 py-3 bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 outline-none resize-y text-lg transition duration-200"
-                                        placeholder="Deskripsi detail kegiatan"
-                                    />
-                                </motion.div>
-
-                                <motion.div variants={itemVariants}>
-                                    <label htmlFor="tanggal" className="block font-semibold mb-2 text-gray-300 text-lg">
-                                        Tanggal
-                                    </label>
-                                    <input
-                                        type="date"
-                                        id="tanggal"
-                                        name="tanggal"
-                                        value={formData.tanggal}
-                                        onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })}
-                                        required
-                                        className="w-full rounded-md border border-gray-600 px-4 py-3 bg-gray-800 text-white focus:ring-yellow-500 focus:border-yellow-500 outline-none text-lg transition duration-200"
-                                    />
-                                </motion.div>
-
-                                <motion.div variants={itemVariants}>
-                                    <label htmlFor="waktu" className="block font-semibold mb-2 text-gray-300 text-lg">
-                                        Waktu
-                                    </label>
-                                    <input
-                                        type="time"
-                                        id="waktu"
-                                        name="waktu"
-                                        value={formData.waktu}
-                                        onChange={(e) => setFormData({ ...formData, waktu: e.target.value })}
-                                        required
-                                        className="w-full rounded-md border border-gray-600 px-4 py-3 bg-gray-800 text-white focus:ring-yellow-500 focus:border-yellow-500 outline-none text-lg transition duration-200"
-                                    />
-                                </motion.div>
-
-                                <motion.div variants={itemVariants}>
-                                    <label htmlFor="lokasi" className="block font-semibold mb-2 text-gray-300 text-lg">
-                                        Lokasi
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="lokasi"
-                                        name="lokasi"
-                                        value={formData.lokasi}
-                                        onChange={(e) => setFormData({ ...formData, lokasi: e.target.value })}
-                                        required
-                                        className="w-full rounded-md border border-gray-600 px-4 py-3 bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 outline-none text-lg transition duration-200"
-                                        placeholder="Contoh: Masjid Agung, Ruang Serbaguna"
-                                    />
-                                </motion.div>
-
-                                <motion.div variants={itemVariants}>
-                                    <label htmlFor="gambar" className="block font-semibold mb-2 text-gray-300 text-lg">
-                                        Gambar Kegiatan
-                                    </label>
-                                    <input
-                                        type="file"
-                                        id="gambar"
-                                        name="gambar"
-                                        accept="image/*"
-                                        onChange={(e) => setGambar(e.target.files ? e.target.files[0] : null)}
-                                        className="w-full rounded-md border border-gray-600 px-4 py-3 bg-gray-800 text-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-yellow-500 file:text-gray-900 hover:file:bg-yellow-600 transition duration-200 cursor-pointer"
-                                    />
-                                    {editMode && kegiatanToDelete?.gambar && !gambar && (
-                                        <p className="mt-2 text-gray-400 text-sm">Gambar saat ini akan dipertahankan kecuali jika Anda mengunggah yang baru.</p>
+                                <AnimatePresence>
+                                    {error && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -20 }}
+                                            className="mt-6 mb-4 p-4 bg-red-600/20 border border-red-500 rounded-lg text-red-400 text-center text-sm font-medium"
+                                        >
+                                            {error}
+                                        </motion.div>
                                     )}
-                                </motion.div>
+                                </AnimatePresence>
 
-                                <DialogFooter className="flex flex-col sm:flex-row justify-end gap-4 mt-8">
-                                    <MotionButton
-                                        type="button"
-                                        onClick={() => {
-                                            setShowModal(false);
-                                            setEditMode(false);
-                                            setFormData({
-                                                nama_kegiatan: '',
-                                                deskripsi: '',
-                                                tanggal: '',
-                                                waktu: '',
-                                                lokasi: '',
-                                            });
-                                            setGambar(null);
-                                            setError(null);
-                                        }}
-                                        variant="outline"
-                                        className="px-7 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full sm:w-auto"
-                                        disabled={isLoading}
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                    >
-                                        Batal
-                                    </MotionButton>
-                                    <MotionButton
-                                        type="submit"
-                                        variant="default"
-                                        className="px-7 py-3 bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto"
-                                        disabled={isLoading}
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                    >
-                                        {isLoading ? (
-                                            <>
-                                                <svg className="animate-spin h-5 w-5 text-gray-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                                <span>Menyimpan...</span>
-                                            </>
-                                        ) : (
-                                            'Simpan'
+                                <form
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        handleSave();
+                                    }}
+                                    className="flex flex-col gap-6 mt-6"
+                                >
+                                    <motion.div variants={itemVariants}>
+                                        <label htmlFor="nama_kegiatan" className="block font-semibold mb-2 text-gray-300 text-lg">
+                                            Nama Kegiatan
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="nama_kegiatan"
+                                            name="nama_kegiatan"
+                                            value={formData.nama_kegiatan}
+                                            onChange={(e) => setFormData({ ...formData, nama_kegiatan: e.target.value })}
+                                            required
+                                            className="w-full rounded-md border border-gray-600 px-4 py-3 bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 outline-none text-lg transition duration-200"
+                                            placeholder="Nama kegiatan"
+                                        />
+                                    </motion.div>
+
+                                    <motion.div variants={itemVariants}>
+                                        <label htmlFor="deskripsi" className="block font-semibold mb-2 text-gray-300 text-lg">
+                                            Deskripsi
+                                        </label>
+                                        <textarea
+                                            id="deskripsi"
+                                            name="deskripsi"
+                                            rows={4}
+                                            value={formData.deskripsi}
+                                            onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
+                                            required
+                                            className="w-full rounded-md border border-gray-600 px-4 py-3 bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 outline-none resize-y text-lg transition duration-200"
+                                            placeholder="Deskripsi detail kegiatan"
+                                        />
+                                    </motion.div>
+
+                                    <motion.div variants={itemVariants}>
+                                        <label htmlFor="tanggal" className="block font-semibold mb-2 text-gray-300 text-lg">
+                                            Tanggal
+                                        </label>
+                                        <input
+                                            type="date"
+                                            id="tanggal"
+                                            name="tanggal"
+                                            value={formData.tanggal}
+                                            onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })}
+                                            required
+                                            className="w-full rounded-md border border-gray-600 px-4 py-3 bg-gray-800 text-white focus:ring-yellow-500 focus:border-yellow-500 outline-none text-lg transition duration-200"
+                                        />
+                                    </motion.div>
+
+                                    <motion.div variants={itemVariants}>
+                                        <label htmlFor="waktu" className="block font-semibold mb-2 text-gray-300 text-lg">
+                                            Waktu
+                                        </label>
+                                        <input
+                                            type="time"
+                                            id="waktu"
+                                            name="waktu"
+                                            value={formData.waktu}
+                                            onChange={(e) => setFormData({ ...formData, waktu: e.target.value })}
+                                            required
+                                            className="w-full rounded-md border border-gray-600 px-4 py-3 bg-gray-800 text-white focus:ring-yellow-500 focus:border-yellow-500 outline-none text-lg transition duration-200"
+                                        />
+                                    </motion.div>
+
+                                    <motion.div variants={itemVariants}>
+                                        <label htmlFor="lokasi" className="block font-semibold mb-2 text-gray-300 text-lg">
+                                            Lokasi
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="lokasi"
+                                            name="lokasi"
+                                            value={formData.lokasi}
+                                            onChange={(e) => setFormData({ ...formData, lokasi: e.target.value })}
+                                            required
+                                            className="w-full rounded-md border border-gray-600 px-4 py-3 bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 outline-none text-lg transition duration-200"
+                                            placeholder="Contoh: Masjid Agung, Ruang Serbaguna"
+                                        />
+                                    </motion.div>
+
+                                    <motion.div variants={itemVariants}>
+                                        <label htmlFor="gambar" className="block font-semibold mb-2 text-gray-300 text-lg">
+                                            Gambar Kegiatan
+                                        </label>
+                                        <input
+                                            type="file"
+                                            id="gambar"
+                                            name="gambar"
+                                            accept="image/*"
+                                            onChange={(e) => setGambar(e.target.files ? e.target.files[0] : null)}
+                                            className="w-full rounded-md border border-gray-600 px-4 py-3 bg-gray-800 text-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-yellow-500 file:text-gray-900 hover:file:bg-yellow-600 transition duration-200 cursor-pointer"
+                                        />
+                                        {editMode && kegiatanToDelete?.gambar && !gambar && (
+                                            <p className="mt-2 text-gray-400 text-sm">Gambar saat ini akan dipertahankan kecuali jika Anda mengunggah yang baru.</p>
                                         )}
-                                    </MotionButton>
-                                </DialogFooter>
-                            </form>
-                        </motion.div>
-                    </motion.div>
+                                    </motion.div>
+
+                                    <DialogFooter className="flex flex-col sm:flex-row justify-end gap-4 mt-8">
+                                        <MotionButton
+                                            type="button"
+                                            onClick={() => {
+                                                setShowModal(false);
+                                                setEditMode(false);
+                                                setFormData({
+                                                    nama_kegiatan: '',
+                                                    deskripsi: '',
+                                                    tanggal: '',
+                                                    waktu: '',
+                                                    lokasi: '',
+                                                });
+                                                setGambar(null);
+                                                setError(null);
+                                            }}
+                                            variant="outline"
+                                            className="px-7 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full sm:w-auto"
+                                            disabled={isLoading}
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                        >
+                                            Batal
+                                        </MotionButton>
+                                        <MotionButton
+                                            type="submit"
+                                            variant="default"
+                                            className="px-7 py-3 bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto"
+                                            disabled={isLoading}
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                        >
+                                            {isLoading ? (
+                                                <>
+                                                    <svg className="animate-spin h-5 w-5 text-gray-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    <span>Menyimpan...</span>
+                                                </>
+                                            ) : (
+                                                'Simpan'
+                                            )}
+                                        </MotionButton>
+                                    </DialogFooter>
+                                </form>
+                            </motion.div>
+                        </DialogContent>
+                    </Dialog>
                 )}
             </AnimatePresence>
 
@@ -709,7 +711,7 @@ const KegiatanPage = () => {
             <AnimatePresence>
                 {showDeleteDialog && (
                     <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                        <DialogContent className="bg-[#1A1614] border-gray-700 text-white shadow-xl p-8 rounded-xl max-w-md">
+                        <DialogContent className="bg-[#1A1614] border-gray-700 text-white shadow-xl p-8 rounded-xl max-w-md max-h-[90vh] overflow-y-auto">
                             <motion.div
                                 variants={modalDialogVariants}
                                 initial="hidden"
@@ -763,6 +765,129 @@ const KegiatanPage = () => {
                                         )}
                                     </MotionButton>
                                 </DialogFooter>
+                            </motion.div>
+                        </DialogContent>
+                    </Dialog>
+                )}
+            </AnimatePresence>
+
+            {/* Read Modal */}
+            <AnimatePresence>
+                {showReadModal && selectedKegiatan && (
+                    <Dialog open={showReadModal} onOpenChange={setShowReadModal}>
+                        <DialogContent className="bg-[#1A1614] border-gray-700 text-white shadow-xl p-8 rounded-xl max-w-2xl max-h-[90vh] overflow-y-auto">
+                            <motion.div
+                                variants={modalDialogVariants}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
+                            >
+                                <DialogHeader className="text-center">
+                                    <DialogTitle className="text-3xl font-bold mb-2 text-yellow-400">
+                                        {selectedKegiatan.nama_kegiatan}
+                                    </DialogTitle>
+                                </DialogHeader>
+
+                                <div className="mt-6 space-y-6">
+                                    {selectedKegiatan.gambar && (
+                                        <div className="relative w-full h-64 rounded-lg overflow-hidden">
+                                            <img
+                                                src={`http://localhost:8000/storage/${selectedKegiatan.gambar}`}
+                                                alt={selectedKegiatan.nama_kegiatan}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <h3 className="text-xl font-semibold text-yellow-400 mb-2">Deskripsi</h3>
+                                            <p className="text-gray-300 leading-relaxed">{selectedKegiatan.deskripsi}</p>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="flex items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                                                </svg>
+                                                <span className="font-semibold text-yellow-400">Tanggal:</span>
+                                                <span className="text-gray-300">{new Date(selectedKegiatan.tanggal).toLocaleDateString('id-ID', { dateStyle: 'long' })}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L11 9.586V6z" clipRule="evenodd" />
+                                                </svg>
+                                                <span className="font-semibold text-yellow-400">Waktu:</span>
+                                                <span className="text-gray-300">{selectedKegiatan.waktu.slice(0, 5)}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                                                </svg>
+                                                <span className="font-semibold text-yellow-400">Lokasi:</span>
+                                                <span className="text-gray-300">{selectedKegiatan.lokasi}</span>
+                                            </div>
+                                            {selectedKegiatan.user && (
+                                                <div className="flex items-center gap-2">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                                                    </svg>
+                                                    <span className="font-semibold text-yellow-400">Oleh:</span>
+                                                    <span className="text-gray-300">{selectedKegiatan.user.nama || selectedKegiatan.user.name || 'Anonim'}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <DialogFooter className="flex flex-col sm:flex-row justify-end gap-4 mt-8">
+                                        {(userRole === 'admin' || userRole === 'takmir') && (
+                                            <>
+                                                <MotionButton
+                                                    onClick={() => {
+                                                        setFormData({
+                                                            id: selectedKegiatan.id,
+                                                            nama_kegiatan: selectedKegiatan.nama_kegiatan,
+                                                            deskripsi: selectedKegiatan.deskripsi,
+                                                            tanggal: selectedKegiatan.tanggal.slice(0, 10),
+                                                            waktu: selectedKegiatan.waktu,
+                                                            lokasi: selectedKegiatan.lokasi,
+                                                        });
+                                                        setGambar(null);
+                                                        setEditMode(true);
+                                                        setShowModal(true);
+                                                        setShowReadModal(false);
+                                                        setError(null);
+                                                    }}
+                                                    className="px-7 py-3 bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-md text-lg font-semibold transition-colors duration-200 w-full sm:w-auto"
+                                                    whileHover={{ scale: 1.05 }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                >
+                                                    Edit
+                                                </MotionButton>
+                                                <MotionButton
+                                                    onClick={() => {
+                                                        setKegiatanToDelete(selectedKegiatan);
+                                                        setShowDeleteDialog(true);
+                                                        setShowReadModal(false);
+                                                    }}
+                                                    className="px-7 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full sm:w-auto"
+                                                    whileHover={{ scale: 1.05 }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                >
+                                                    Hapus
+                                                </MotionButton>
+                                            </>
+                                        )}
+                                        <MotionButton
+                                            onClick={() => setShowReadModal(false)}
+                                            className="px-7 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full sm:w-auto"
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                        >
+                                            Tutup
+                                        </MotionButton>
+                                    </DialogFooter>
+                                </div>
                             </motion.div>
                         </DialogContent>
                     </Dialog>
