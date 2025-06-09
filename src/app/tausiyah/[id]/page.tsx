@@ -153,63 +153,26 @@ const TausiyahDetailPage = ({ params }: { params: Promise<{ id: string }> }) => 
       ) : (
         <GuestNavbar />
       )}
-      
-      {/* Banner */}
-      <div className="relative h-64 w-full">
-        <img
-          src="/images/masjid7.jpg"
-          alt="Banner Tausiyah"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <h1 className="text-white text-3xl md:text-4xl font-bold">Detail Tausiyah</h1>
-        </div>
-      </div>
-
-      {/* Deskripsi */}
-      <div className="max-w-3xl mx-auto px-6 py-10 text-center">
-        <p className="text-white text-md leading-relaxed">
-          Baca dan renungkan tausiyah ini untuk meningkatkan keimanan dan ketakwaan kita.
-        </p>
-      </div>
 
       {/* Container */}
-      <div className="max-w-4xl mx-auto px-4 pb-10">
+      <div className="max-w-6xl mx-auto px-8 py-20">
         <Card className="bg-black border-white/10">
-          <CardHeader>
+          <CardHeader className="px-8 py-6">
             <div className="flex justify-between items-center">
-              <CardTitle className="text-2xl font-bold text-white">{tausiyah.judul}</CardTitle>
-              <div className="flex space-x-2">
-                <Button
-                  onClick={() => router.push('/tausiyah')}
-                  variant="outline"
-                  className="text-white border-green-500 bg-green-500 hover:bg-green-600"
-                >
-                  Kembali
-                </Button>
-                {(userRole === 'admin' || userRole === 'takmir') && (
-                  <>
-                    <Button
-                      onClick={handleEdit}
-                      className="bg-yellow-500 hover:bg-yellow-600 text-white"
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      onClick={handleDelete}
-                      className="bg-red-500 hover:bg-red-600 text-white"
-                    >
-                      Hapus
-                    </Button>
-                  </>
-                )}
-              </div>
+              <CardTitle className="text-3xl font-bold text-white">{tausiyah.judul}</CardTitle>
+              <Button
+                onClick={() => router.back()}
+                variant="outline"
+                className="text-white border-green-500 bg-green-500 hover:bg-green-600"
+              >
+                Kembali
+              </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-8 py-6">
             <div className="prose prose-invert max-w-none">
-              <div className="text-gray-300 whitespace-pre-wrap mb-6">{tausiyah.isi}</div>
-              <div className="flex justify-between items-center text-sm text-gray-400">
+              <div className="text-gray-300 whitespace-pre-wrap mb-8 text-lg leading-relaxed">{tausiyah.isi}</div>
+              <div className="flex justify-between items-center text-sm text-gray-400 border-t border-gray-700 pt-6">
                 <div>
                   Oleh: {tausiyah.user?.nama || tausiyah.user?.name || 'Anonim'}
                 </div>

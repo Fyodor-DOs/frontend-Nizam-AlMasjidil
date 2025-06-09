@@ -98,7 +98,7 @@ const buttonHoverTap = {
 const TausiyahPage = () => {
   const router = useRouter();
   const [tausiyahList, setTausiyahList] = useState<Tausiyah[]>([]);
-  const [formData, setFormData] = useState({ id: 0, judul: '', isi: '', waktu: '' });
+  const [formData, setFormData] = useState({ id: 0, judul: '', isi: '' });
   const [userRole, setUserRole] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -176,7 +176,6 @@ const TausiyahPage = () => {
       const payload = {
         judul: formData.judul,
         isi: formData.isi,
-        waktu: formData.waktu || getCurrentDateTime(),
       };
 
       if (editMode && formData.id) {
@@ -187,7 +186,7 @@ const TausiyahPage = () => {
 
       setShowModal(false);
       setEditMode(false);
-      setFormData({ id: 0, judul: '', isi: '', waktu: '' });
+      setFormData({ id: 0, judul: '', isi: '' });
       await fetchTausiyah();
     } catch (e: any) {
       console.error('Error during save/update:', e);
@@ -388,7 +387,6 @@ const TausiyahPage = () => {
                               id: item.id,
                               judul: item.judul,
                               isi: item.isi,
-                              waktu: item.waktu.slice(0, 16),
                             });
                             setEditMode(true);
                             setShowModal(true);
@@ -425,7 +423,7 @@ const TausiyahPage = () => {
           onClick={() => {
             setShowModal(true);
             setEditMode(false);
-            setFormData({ id: 0, judul: '', isi: '', waktu: getCurrentDateTime() });
+            setFormData({ id: 0, judul: '', isi: '' });
             setError(null);
           }}
           className="fixed bottom-8 right-8 bg-green-600 hover:bg-green-700 text-white p-4 rounded-full shadow-lg transition-transform transform hover:scale-105 duration-200 z-40 flex items-center justify-center"
@@ -440,209 +438,180 @@ const TausiyahPage = () => {
         </motion.button>
       )}
 
-      {/* Modal Form */}
-      <AnimatePresence>
-        {showModal && (
+      {/* Create/Edit Modal */}
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="bg-[#1A1614] border-gray-700 text-white shadow-xl p-8 rounded-xl max-w-lg max-h-[90vh] overflow-y-auto">
           <motion.div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            variants={modalOverlayVariants}
+            variants={modalDialogVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
           >
-            <motion.div
-              className="border border-gray-700 bg-[#1A1614] p-8 rounded-xl shadow-2xl w-full max-w-lg text-white"
-              variants={modalDialogVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
+            <DialogHeader className="text-center">
+              <DialogTitle className="text-3xl font-bold mb-2 text-yellow-400">
+                {editMode ? 'Edit Tausiyah' : 'Tambah Tausiyah'}
+              </DialogTitle>
+              <DialogDescription className="text-gray-300 text-lg">
+                {editMode
+                  ? 'Ubah informasi tausiyah sesuai kebutuhan.'
+                  : 'Isi formulir berikut untuk menambahkan tausiyah baru.'}
+              </DialogDescription>
+            </DialogHeader>
+
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="mt-6 mb-4 p-4 bg-red-600/20 border border-red-500 rounded-lg text-red-400 text-center text-sm font-medium"
+                >
+                  {error}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSave();
+              }}
+              className="flex flex-col gap-6 mt-6"
             >
-              <DialogHeader className="text-center">
-                <DialogTitle className="text-3xl font-bold mb-2 text-yellow-400">{editMode ? 'Edit Tausiyah' : 'Tambah Tausiyah'}</DialogTitle>
-                <DialogDescription className="text-gray-300 text-lg">
-                  {editMode
-                    ? 'Ubah informasi tausiyah sesuai kebutuhan.'
-                    : 'Isi formulir berikut untuk menambahkan tausiyah baru.'}
-                </DialogDescription>
-              </DialogHeader>
+              <motion.div variants={itemVariants}>
+                <label htmlFor="judul" className="block font-semibold mb-2 text-gray-300 text-lg">
+                  Judul
+                </label>
+                <input
+                  type="text"
+                  id="judul"
+                  name="judul"
+                  value={formData.judul}
+                  onChange={(e) => setFormData({ ...formData, judul: e.target.value })}
+                  required
+                  className="w-full rounded-md border border-gray-600 px-4 py-3 bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 outline-none text-lg transition duration-200"
+                  placeholder="Judul tausiyah"
+                />
+              </motion.div>
 
-              <AnimatePresence>
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="mt-6 mb-4 p-4 bg-red-600/20 border border-red-500 rounded-lg text-red-400 text-center text-sm font-medium"
-                  >
-                    {error}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <motion.div variants={itemVariants}>
+                <label htmlFor="isi" className="block font-semibold mb-2 text-gray-300 text-lg">
+                  Isi
+                </label>
+                <textarea
+                  id="isi"
+                  name="isi"
+                  rows={4}
+                  value={formData.isi}
+                  onChange={(e) => setFormData({ ...formData, isi: e.target.value })}
+                  required
+                  className="w-full rounded-md border border-gray-600 px-4 py-3 bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 outline-none resize-y text-lg transition duration-200"
+                  placeholder="Isi tausiyah"
+                />
+              </motion.div>
 
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSave();
-                }}
-                className="flex flex-col gap-6 mt-6"
-              >
-                <motion.div variants={itemVariants}>
-                  <label htmlFor="judul" className="block font-semibold mb-2 text-gray-300 text-lg">
-                    Judul
-                  </label>
-                  <input
-                    type="text"
-                    id="judul"
-                    name="judul"
-                    value={formData.judul}
-                    onChange={(e) => setFormData({ ...formData, judul: e.target.value })}
-                    required
-                    className="w-full rounded-md border border-gray-600 px-4 py-3 bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 outline-none text-lg transition duration-200"
-                    placeholder="Judul tausiyah"
-                  />
-                </motion.div>
-
-                <motion.div variants={itemVariants}>
-                  <label htmlFor="isi" className="block font-semibold mb-2 text-gray-300 text-lg">
-                    Isi
-                  </label>
-                  <textarea
-                    id="isi"
-                    name="isi"
-                    rows={6}
-                    value={formData.isi}
-                    onChange={(e) => setFormData({ ...formData, isi: e.target.value })}
-                    required
-                    className="w-full rounded-md border border-gray-600 px-4 py-3 bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 outline-none resize-y text-lg transition duration-200"
-                    placeholder="Isi tausiyah"
-                  />
-                </motion.div>
-
-                <motion.div variants={itemVariants}>
-                  <label htmlFor="waktu" className="block font-semibold mb-2 text-gray-300 text-lg">
-                    Waktu
-                  </label>
-                  <input
-                    type="datetime-local"
-                    id="waktu"
-                    name="waktu"
-                    value={formData.waktu}
-                    onChange={(e) => setFormData({ ...formData, waktu: e.target.value })}
-                    className="w-full rounded-md border border-gray-600 px-4 py-3 bg-gray-800 text-white focus:ring-yellow-500 focus:border-yellow-500 outline-none text-lg transition duration-200"
-                  />
-                </motion.div>
-
-                <DialogFooter className="flex flex-col sm:flex-row justify-end gap-4 mt-8">
-                  {/* Menggunakan MotionButton untuk batal */}
-                  <MotionButton
-                    type="button"
-                    onClick={() => {
-                      setShowModal(false);
-                      setEditMode(false);
-                      setFormData({ id: 0, judul: '', isi: '', waktu: '' });
-                      setError(null);
-                    }}
-                    variant="outline" // Properti variant tetap di sini
-                    className="px-7 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full sm:w-auto"
-                    disabled={isLoading}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    Batal
-                  </MotionButton>
-                  {/* Menggunakan MotionButton untuk simpan */}
-                  <MotionButton
-                    type="submit"
-                    variant="default" // Atau variant lain yang sesuai jika ada defaultnya, atau hapus jika styling dari className sudah cukup
-                    className="px-7 py-3 bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto"
-                    disabled={isLoading}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    {isLoading ? (
-                      <>
-                        <svg className="animate-spin h-5 w-5 text-gray-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span>Menyimpan...</span>
-                      </>
-                    ) : (
-                      'Simpan'
-                    )}
-                  </MotionButton>
-                </DialogFooter>
-              </form>
-            </motion.div>
+              <DialogFooter className="flex flex-col sm:flex-row justify-end gap-4 mt-8">
+                <MotionButton
+                  type="button"
+                  onClick={() => {
+                    setShowModal(false);
+                    setEditMode(false);
+                    setFormData({ id: 0, judul: '', isi: '' });
+                    setError(null);
+                  }}
+                  variant="outline"
+                  className="px-7 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full sm:w-auto"
+                  disabled={isLoading}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Batal
+                </MotionButton>
+                <MotionButton
+                  type="submit"
+                  variant="default"
+                  className="px-7 py-3 bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto"
+                  disabled={isLoading}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {isLoading ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5 text-gray-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    'Simpan'
+                  )}
+                </MotionButton>
+              </DialogFooter>
+            </form>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <AnimatePresence>
-        {showDeleteDialog && (
-          <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-            <DialogContent className="bg-[#1A1614] border-gray-700 text-white shadow-xl p-8 rounded-xl max-w-md">
-              <motion.div
-                variants={modalDialogVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-              >
-                <DialogHeader className="text-center">
-                  <DialogTitle className="text-3xl font-bold text-yellow-400 mb-2">Konfirmasi Hapus</DialogTitle>
-                  <DialogDescription className="text-gray-300 text-lg">
-                    Apakah Anda yakin ingin menghapus tausiyah{' '}
-                    <strong className="text-yellow-300">{tausiyahToDelete?.judul}</strong>? Tindakan ini tidak dapat dibatalkan.
-                  </DialogDescription>
-                </DialogHeader>
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="bg-[#1A1614] border-gray-700 text-white shadow-xl p-8 rounded-xl max-w-md max-h-[90vh] overflow-y-auto">
+          <motion.div
+            variants={modalDialogVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+            <DialogHeader className="text-center">
+              <DialogTitle className="text-3xl font-bold text-yellow-400 mb-2">Konfirmasi Hapus</DialogTitle>
+              <DialogDescription className="text-gray-300 text-lg">
+                Apakah Anda yakin ingin menghapus tausiyah{' '}
+                <strong className="text-yellow-300">{tausiyahToDelete?.judul}</strong>? Tindakan ini tidak dapat dibatalkan.
+              </DialogDescription>
+            </DialogHeader>
 
-                <DialogFooter className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
-                  {/* Menggunakan MotionButton untuk batal (pada dialog konfirmasi hapus) */}
-                  <MotionButton
-                    variant="outline"
-                    onClick={() => setShowDeleteDialog(false)}
-                    className="px-7 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full sm:w-auto"
-                    disabled={isLoading}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    Batal
-                  </MotionButton>
-                  {/* Menggunakan MotionButton untuk hapus (pada dialog konfirmasi hapus) */}
-                  <MotionButton
-                    variant="destructive"
-                    onClick={handleDeleteConfirm}
-                    className="px-7 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto"
-                    disabled={isLoading}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    {isLoading ? (
-                      <>
-                        <motion.svg
-                          className="h-5 w-5 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        >
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </motion.svg>
-                        <span>Menghapus...</span>
-                      </>
-                    ) : (
-                      'Hapus'
-                    )}
-                  </MotionButton>
-                </DialogFooter>
-              </motion.div>
-            </DialogContent>
-          </Dialog>
-        )}
-      </AnimatePresence>
+            <DialogFooter className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
+              <MotionButton
+                variant="outline"
+                onClick={() => setShowDeleteDialog(false)}
+                className="px-7 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full sm:w-auto"
+                disabled={isLoading}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Batal
+              </MotionButton>
+              <MotionButton
+                variant="destructive"
+                onClick={handleDeleteConfirm}
+                className="px-7 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto"
+                disabled={isLoading}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {isLoading ? (
+                  <>
+                    <motion.svg
+                      className="h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    >
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </motion.svg>
+                    <span>Menghapus...</span>
+                  </>
+                ) : (
+                  'Hapus'
+                )}
+              </MotionButton>
+            </DialogFooter>
+          </motion.div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
