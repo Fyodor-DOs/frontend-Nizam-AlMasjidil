@@ -21,7 +21,6 @@ const cities = [
   { name: 'Malang', value: 'Malang' }
 ];
 
-// Add Tausiyah type
 type Tausiyah = {
   id: number;
   judul: string;
@@ -39,7 +38,6 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState('Jakarta');
-  // Add state for tausiyah
   const [tausiyahList, setTausiyahList] = useState<Tausiyah[]>([]);
   const [loadingTausiyah, setLoadingTausiyah] = useState(true);
 
@@ -76,13 +74,11 @@ export default function Home() {
     fetchPrayerTimes();
   }, [selectedCity]);
 
-  // Add useEffect for fetching tausiyah
   useEffect(() => {
     const fetchTausiyah = async () => {
       try {
         setLoadingTausiyah(true);
         const res = await api.get('/tausiyah');
-        // Get only the latest 3 tausiyah
         setTausiyahList(res.data.slice(0, 3));
       } catch (e: any) {
         console.error('Error fetching tausiyah:', e);
@@ -541,51 +537,103 @@ export default function Home() {
         ) : tausiyahList.length === 0 ? (
           <p className="text-center text-gray-400 py-8 text-lg">Belum ada tausiyah yang tersedia saat ini.</p>
         ) : (
-          <motion.div 
-            className="grid md:grid-cols-3 gap-8"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
-            variants={staggerContainer}
-          >
-            {tausiyahList.map((tausiyah, index) => (
-              <motion.div
-                key={tausiyah.id}
-                className="bg-[#1E1E1E] p-6 rounded-lg cursor-pointer hover:bg-white/10 transition-all duration-300"
-                onClick={() => router.push(`/tausiyah/${tausiyah.id}`)}
-                variants={cardVariants}
-                whileHover="hover"
-                whileTap="tap"
-                custom={index}
-              >
+          <div className="space-y-8">
+            {/* First 3 items in 3 columns */}
+            <motion.div 
+              className="grid md:grid-cols-3 gap-8"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.3 }}
+              variants={staggerContainer}
+            >
+              {tausiyahList.slice(0, 3).map((tausiyah, index) => (
                 <motion.div
-                  className="text-4xl mb-4 text-yellow-400"
-                  initial="hidden"
-                  animate="visible"
-                  variants={iconVariants}
+                  key={tausiyah.id}
+                  className="bg-[#1E1E1E] p-6 rounded-lg cursor-pointer hover:bg-white/10 transition-all duration-300"
+                  onClick={() => router.push(`/tausiyah/${tausiyah.id}`)}
+                  variants={cardVariants}
                   whileHover="hover"
-                >📝</motion.div>
-                <h3 className="text-xl font-semibold mb-2 text-white line-clamp-2">{tausiyah.judul}</h3>
-                <p className="text-gray-400 text-sm line-clamp-3 mb-4">
-                  {tausiyah.isi}
-                </p>
-                <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-400 mt-auto">
-                  <div className="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L11 9.586V6z" clipRule="evenodd" />
-                    </svg>
-                    <span>{new Date(tausiyah.waktu).toLocaleDateString('id-ID', { dateStyle: 'medium' })}</span>
+                  whileTap="tap"
+                  custom={index}
+                >
+                  <motion.div
+                    className="text-4xl mb-4 text-yellow-400"
+                    initial="hidden"
+                    animate="visible"
+                    variants={iconVariants}
+                    whileHover="hover"
+                  >📝</motion.div>
+                  <h3 className="text-xl font-semibold mb-2 text-white line-clamp-2">{tausiyah.judul}</h3>
+                  <p className="text-gray-400 text-sm line-clamp-3 mb-4">
+                    {tausiyah.isi}
+                  </p>
+                  <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-400 mt-auto">
+                    <div className="flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L11 9.586V6z" clipRule="evenodd" />
+                      </svg>
+                      <span>{new Date(tausiyah.waktu).toLocaleDateString('id-ID', { dateStyle: 'medium' })}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                      </svg>
+                      <span>{tausiyah.user?.nama || tausiyah.user?.name || 'Anonim'}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                    </svg>
-                    <span>{tausiyah.user?.nama || tausiyah.user?.name || 'Anonim'}</span>
-                  </div>
-                </div>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            {/* Remaining items in single column */}
+            {tausiyahList.length > 3 && (
+              <motion.div 
+                className="grid grid-cols-1 gap-8 max-w-2xl mx-auto"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.3 }}
+                variants={staggerContainer}
+              >
+                {tausiyahList.slice(3).map((tausiyah, index) => (
+                  <motion.div
+                    key={tausiyah.id}
+                    className="bg-[#1E1E1E] p-6 rounded-lg cursor-pointer hover:bg-white/10 transition-all duration-300"
+                    onClick={() => router.push(`/tausiyah/${tausiyah.id}`)}
+                    variants={cardVariants}
+                    whileHover="hover"
+                    whileTap="tap"
+                    custom={index}
+                  >
+                    <motion.div
+                      className="text-4xl mb-4 text-yellow-400"
+                      initial="hidden"
+                      animate="visible"
+                      variants={iconVariants}
+                      whileHover="hover"
+                    >📝</motion.div>
+                    <h3 className="text-xl font-semibold mb-2 text-white line-clamp-2">{tausiyah.judul}</h3>
+                    <p className="text-gray-400 text-sm line-clamp-3 mb-4">
+                      {tausiyah.isi}
+                    </p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-400 mt-auto">
+                      <div className="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L11 9.586V6z" clipRule="evenodd" />
+                        </svg>
+                        <span>{new Date(tausiyah.waktu).toLocaleDateString('id-ID', { dateStyle: 'medium' })}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                        </svg>
+                        <span>{tausiyah.user?.nama || tausiyah.user?.name || 'Anonim'}</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
               </motion.div>
-            ))}
-          </motion.div>
+            )}
+          </div>
         )}
 
         <motion.div 
@@ -595,12 +643,6 @@ export default function Home() {
           viewport={{ once: true, amount: 0.5 }}
           variants={fadeIn}
         >
-          <Button
-            onClick={() => router.push('/tausiyah')}
-            className="bg-yellow-400 text-black hover:bg-yellow-500"
-          >
-            Lihat Semua Tausiyah
-          </Button>
         </motion.div>
       </section>
 
