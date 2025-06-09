@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api, { setAuthToken } from '@/utils/api';
 import Navbar from '@/components/Navbar';
-import GuestNavbar from '@/components/GuestNavbar';
 import {
   Dialog,
   DialogContent,
@@ -225,12 +224,8 @@ const TausiyahPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#1A1614] text-white flex flex-col">
-      {userRole ? (
-        <Navbar role={userRole} user={user} />
-      ) : (
-        <GuestNavbar />
-      )}
+    <div className="min-h-screen bg-[#1A1614] text-white">
+      <Navbar role={userRole} user={user} />
 
       {/* Hero Section */}
       <div className="relative h-96 w-full flex items-center justify-center overflow-hidden">

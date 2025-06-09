@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api, { setAuthToken } from '@/utils/api';
 import Navbar from '@/components/Navbar';
-import GuestNavbar from '@/components/GuestNavbar'; // Ditambahkan
 import {
     Dialog,
     DialogContent,
@@ -13,12 +12,12 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button"; // Ditambahkan
+import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlusCircle } from 'lucide-react';
 
 // Membuat komponen MotionButton yang merupakan Button dari shadcn/ui yang dianimasikan oleh Framer Motion
-const MotionButton = motion(Button); // Ditambahkan
+const MotionButton = motion(Button);
 
 type Kegiatan = {
     id: number;
@@ -28,7 +27,7 @@ type Kegiatan = {
     waktu: string;
     lokasi: string;
     gambar?: string;
-    user?: { // Ditambahkan untuk konsistensi dengan Tausiyah jika user bisa dilihat
+    user?: {
         name?: string;
         nama?: string;
     };
@@ -65,7 +64,7 @@ const sectionVariants = {
     visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: 'easeOut' } },
 };
 
-const cardVariants = { // Untuk card seperti daftar kegiatan
+const cardVariants = {
     hidden: { opacity: 0, scale: 0.95 },
     visible: { opacity: 1, scale: 1, transition: { duration: 0.7, ease: 'easeOut' } },
 };
@@ -266,12 +265,8 @@ const KegiatanPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#1A1614] text-white flex flex-col">
-            {userRole ? (
-                <Navbar role={userRole} user={user} />
-            ) : (
-                <GuestNavbar />
-            )}
+        <div className="min-h-screen bg-[#1A1614] text-white">
+            <Navbar role={userRole} user={user} />
 
             {/* Hero Section */}
             <div className="relative h-96 w-full flex items-center justify-center overflow-hidden">
