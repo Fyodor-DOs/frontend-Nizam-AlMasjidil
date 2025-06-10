@@ -23,6 +23,8 @@ const KeuanganPage = () => {
   const [keterangan, setKeterangan] = useState('');
   const [jumlah, setJumlah] = useState('');
   const [tanggal, setTanggal] = useState('');
+  const [gambar, setGambar] = useState<File | null>(null);
+  const [gambarPreview, setGambarPreview] = useState<string | null>(null);
   const [totalSaldo, setTotalSaldo] = useState<number>(0);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -102,7 +104,7 @@ const KeuanganPage = () => {
   };
 
   const handleCreatePengeluaran = async () => {
-    if (!keterangan || !jumlah || !tanggal) {
+    if (!keterangan || !jumlah || !tanggal || !gambar) {
       setError('Semua field harus diisi!');
       return;
     }
@@ -110,17 +112,29 @@ const KeuanganPage = () => {
     try {
       setIsLoading(true);
       setError(null);
-      await api.post('/keuangan', {
-        keterangan,
-        jumlah: parseFloat(jumlah),
-        tanggal,
-        tipe_keuangan_id: 2, // Hardcoded for Pengeluaran
+
+      const formData = new FormData();
+      formData.append('keterangan', keterangan);
+      formData.append('jumlah', jumlah);
+      formData.append('tanggal', tanggal);
+      formData.append('tipe_keuangan_id', '2'); // Hardcoded for Pengeluaran
+      if (gambar) {
+        formData.append('gambar', gambar);
+      }
+
+      await api.post('/keuangan', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
+
       setShowModal(false);
       setKeterangan('');
       setJumlah('');
       setTanggal('');
-      await fetchKeuangan(); // Re-fetch to update the list and total saldo
+      setGambar(null);
+      setGambarPreview(null);
+      await fetchKeuangan();
     } catch (err: any) {
       console.error('Error tambah pengeluaran:', err);
       setError(err?.response?.data?.message || 'Gagal menambah pengeluaran');
@@ -492,47 +506,70 @@ const KeuanganPage = () => {
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="border border-gray-700 bg-[#1A1614] p-8 rounded-lg shadow-2xl w-full max-w-md text-white"
+              className="border border-gray-700 bg-[#1A1614] rounded-lg shadow-2xl w-full max-w-2xl text-white flex flex-col max-h-[90vh]"
               variants={modalVariants}
               initial="hidden"
               animate="visible"
               exit="exit"
             >
-              <h2 className="text-3xl font-bold mb-6 text-center text-yellow-400">Detail Transaksi</h2>
-              <div className="space-y-4 text-lg">
-                <p><strong>Keterangan:</strong> <span className="text-gray-200">{selectedKeuangan.keterangan}</span></p>
-                <p><strong>Tanggal:</strong> <span className="text-gray-200">{new Date(selectedKeuangan.tanggal).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</span></p>
-                <p><strong>Jumlah:</strong>
-                  <span className={`font-bold ${selectedKeuangan.tipe_keuangan_id === 1 ? 'text-green-400' : 'text-red-400'}`}>
-                    {' '}Rp {parseFloat(String(selectedKeuangan.jumlah).replace(/[^\d.-]/g, '')).toLocaleString('id-ID')}
-                  </span>
-                </p>
-                <p><strong>Tipe:</strong>
-                  <span className={`font-semibold ${selectedKeuangan.tipe_keuangan_id === 1 ? 'text-green-400' : 'text-red-400'}`}>
-                    {selectedKeuangan.tipe_keuangan_id === 1 ? ' Pemasukan' : ' Pengeluaran'}
-                  </span>
-                </p>
-                {selectedKeuangan.user && (
-                  <p><strong>Dicatat oleh:</strong> <span className="text-gray-200">{selectedKeuangan.user.nama}</span></p>
+              <div className="p-8 overflow-y-auto">
+                <h2 className="text-3xl font-bold mb-6 text-center text-yellow-400">Detail Transaksi</h2>
+                
+                {/* Tampilkan gambar jika ada dan tipe keuangan adalah pengeluaran */}
+                {selectedKeuangan.tipe_keuangan_id === 2 && selectedKeuangan.gambar && (
+                  <motion.div 
+                    className="mb-6"
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <div className="relative w-full overflow-hidden rounded-lg border border-gray-700">
+                      <img
+                        src={`http://localhost:8000${selectedKeuangan.gambar}`}
+                        alt="Bukti Pengeluaran"
+                        className="w-full h-auto max-h-[50vh] object-contain"
+                      />
+                    </div>
+                    <p className="text-sm text-gray-400 mt-2 text-center">Bukti Pengeluaran</p>
+                  </motion.div>
                 )}
-                {selectedKeuangan.payment_method && (
-                  <p><strong>Metode Pembayaran:</strong> <span className="text-gray-200">{selectedKeuangan.payment_method}</span></p>
-                )}
-                {selectedKeuangan.nama_donatur && (
-                  <p><strong>Nama Donatur:</strong> <span className="text-gray-200">{selectedKeuangan.nama_donatur}</span></p>
-                )}
-              </div>
-              <div className="flex justify-center mt-8">
-                <motion.button
-                  onClick={() => {
-                    setShowDetailModal(false);
-                    setSelectedKeuangan(null);
-                  }}
-                  className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200"
-                  {...buttonHoverTap}
-                >
-                  Tutup
-                </motion.button>
+
+                <div className="space-y-4 text-lg">
+                  <p><strong>Keterangan:</strong> <span className="text-gray-200">{selectedKeuangan.keterangan}</span></p>
+                  <p><strong>Tanggal:</strong> <span className="text-gray-200">{new Date(selectedKeuangan.tanggal).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</span></p>
+                  <p><strong>Jumlah:</strong>
+                    <span className={`font-bold ${selectedKeuangan.tipe_keuangan_id === 1 ? 'text-green-400' : 'text-red-400'}`}>
+                      {' '}Rp {parseFloat(String(selectedKeuangan.jumlah).replace(/[^\d.-]/g, '')).toLocaleString('id-ID')}
+                    </span>
+                  </p>
+                  <p><strong>Tipe:</strong>
+                    <span className={`font-semibold ${selectedKeuangan.tipe_keuangan_id === 1 ? 'text-green-400' : 'text-red-400'}`}>
+                      {selectedKeuangan.tipe_keuangan_id === 1 ? ' Pemasukan' : ' Pengeluaran'}
+                    </span>
+                  </p>
+                  {selectedKeuangan.user && (
+                    <p><strong>Dicatat oleh:</strong> <span className="text-gray-200">{selectedKeuangan.user.nama}</span></p>
+                  )}
+                  {selectedKeuangan.payment_method && (
+                    <p><strong>Metode Pembayaran:</strong> <span className="text-gray-200">{selectedKeuangan.payment_method}</span></p>
+                  )}
+                  {selectedKeuangan.nama_donatur && (
+                    <p><strong>Nama Donatur:</strong> <span className="text-gray-200">{selectedKeuangan.nama_donatur}</span></p>
+                  )}
+                </div>
+
+                <div className="flex justify-center mt-8">
+                  <motion.button
+                    onClick={() => {
+                      setShowDetailModal(false);
+                      setSelectedKeuangan(null);
+                    }}
+                    className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200"
+                    {...buttonHoverTap}
+                  >
+                    Tutup
+                  </motion.button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -602,6 +639,32 @@ const KeuanganPage = () => {
                     required
                   />
                 </motion.div>
+                <motion.div variants={itemVariants}>
+                  <label htmlFor="gambar" className="block font-semibold mb-2 text-gray-300 text-lg">
+                    Bukti Pengeluaran
+                  </label>
+                  <input
+                    type="file"
+                    id="gambar"
+                    name="gambar"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setGambar(file);
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setGambarPreview(reader.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="w-full rounded-md border border-gray-600 px-4 py-3 bg-gray-800 text-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-yellow-500 file:text-gray-900 hover:file:bg-yellow-600 transition duration-200 cursor-pointer"
+                  />
+                  {selectedKeuangan && selectedKeuangan.gambar && !gambar && (
+                    <p className="mt-2 text-gray-400 text-sm">Gambar saat ini akan dipertahankan kecuali jika Anda mengunggah yang baru.</p>
+                  )}
+                </motion.div>
               </div>
               <div className="flex justify-end space-x-4 mt-8">
                 <motion.button
@@ -610,6 +673,8 @@ const KeuanganPage = () => {
                     setKeterangan('');
                     setJumlah('');
                     setTanggal('');
+                    setGambar(null);
+                    setGambarPreview(null);
                     setError(null);
                   }}
                   className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200"
