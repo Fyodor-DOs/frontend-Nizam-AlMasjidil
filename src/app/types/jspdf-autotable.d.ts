@@ -1,11 +1,12 @@
 import 'jspdf';
+import { UserOptions } from 'jspdf-autotable';
 
 declare module 'jspdf' {
   interface jsPDF {
-    autoTable: (options: any) => jsPDF;
+    autoTable: (options: UserOptions) => jsPDF;
     lastAutoTable?: {
       finalY: number;
-      [key: string]: any;
+      [key: string]: unknown;
     };
   }
 }

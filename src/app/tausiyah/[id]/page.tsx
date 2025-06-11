@@ -1,12 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import api, { setAuthToken } from '@/utils/api';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import Navbar from '@/components/Navbar';
 import GuestNavbar from '@/components/GuestNavbar';
 
@@ -21,19 +19,50 @@ type Tausiyah = {
   };
 };
 
+interface User {
+    id: number;
+    nama: string;
+    email: string;
+    role: string;
+}
+
 const TausiyahDetailPage = ({ params }: { params: Promise<{ id: string }> }) => {
-  const resolvedParams = React.use(params);
+  const { id } = React.use(params);
+
   const [tausiyah, setTausiyah] = useState<Tausiyah | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editForm, setEditForm] = useState({
-    judul: '',
-    isi: ''
-  });
   const router = useRouter();
+
+  const fetchUserData = useCallback(async () => {
+    try {
+      const response = await api.get('/user');
+      setUser(response.data);
+    } catch (err) {
+      console.error('Error fetching user data:', err);
+    }
+  }, []);
+
+  const fetchTausiyahDetail = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await api.get(`/tausiyah/${id}`);
+      setTausiyah(response.data);
+    } catch (err: unknown) { 
+      console.error('Error fetching tausiyah detail:', err);
+      if (typeof err === 'object' && err !== null && 'response' in err) {
+          const errorResponse = err.response as { data?: { message?: string } };
+          setError(errorResponse.data?.message || 'Gagal mengambil detail tausiyah');
+      } else {
+          setError('Gagal mengambil detail tausiyah');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
@@ -44,70 +73,7 @@ const TausiyahDetailPage = ({ params }: { params: Promise<{ id: string }> }) => 
       fetchUserData();
     }
     fetchTausiyahDetail();
-  }, [router, resolvedParams.id]);
-
-  const fetchUserData = async () => {
-    try {
-      const response = await api.get('/user');
-      setUser(response.data);
-    } catch (err) {
-      console.error('Error fetching user data:', err);
-    }
-  };
-
-  const fetchTausiyahDetail = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const response = await api.get(`/tausiyah/${resolvedParams.id}`);
-      setTausiyah(response.data);
-    } catch (err: any) {
-      console.error('Error fetching tausiyah detail:', err);
-      setError(err.response?.data?.message || 'Gagal mengambil detail tausiyah');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!confirm('Yakin ingin menghapus tausiyah ini?')) return;
-    try {
-      setIsLoading(true);
-      setError(null);
-      await api.delete(`/tausiyah/${resolvedParams.id}`);
-      router.push('/tausiyah');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal menghapus tausiyah');
-      console.error('Error deleting tausiyah:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleEdit = () => {
-    if (tausiyah) {
-      setEditForm({
-        judul: tausiyah.judul,
-        isi: tausiyah.isi
-      });
-      setIsEditModalOpen(true);
-    }
-  };
-
-  const handleEditSubmit = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      await api.put(`/tausiyah/${resolvedParams.id}`, editForm);
-      await fetchTausiyahDetail();
-      setIsEditModalOpen(false);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal mengedit tausiyah');
-      console.error('Error editing tausiyah:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [id, fetchUserData, fetchTausiyahDetail]); 
 
   if (isLoading) {
     return (
@@ -154,87 +120,43 @@ const TausiyahDetailPage = ({ params }: { params: Promise<{ id: string }> }) => 
         <GuestNavbar />
       )}
 
-      {/* Container */}
-      <div className="max-w-6xl mx-auto px-8 py-20">
-        <Card className="bg-black border-white/10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <Card className="bg-black/50 border-white/10 shadow-lg backdrop-blur-sm">
           <CardHeader className="px-8 py-6">
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-3xl font-bold text-white">{tausiyah.judul}</CardTitle>
-              <Button
-                onClick={() => router.back()}
-                variant="outline"
-                className="text-white border-green-500 bg-green-500 hover:bg-green-600"
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+              <CardTitle className="text-2xl lg:text-3xl font-bold text-yellow-400 leading-tight">
+                {tausiyah.judul}
+              </CardTitle>
+              <Button 
+                onClick={() => router.back()} 
+                className="bg-green-600 text-white hover:bg-green-700 transition-colors duration-200" 
               >
                 Kembali
               </Button>
             </div>
           </CardHeader>
           <CardContent className="px-8 py-6">
-            <div className="prose prose-invert max-w-none">
-              <div className="text-gray-300 whitespace-pre-wrap mb-8 text-lg leading-relaxed">{tausiyah.isi}</div>
-              <div className="flex justify-between items-center text-sm text-gray-400 border-t border-gray-700 pt-6">
-                <div>
-                  Oleh: {tausiyah.user?.nama || tausiyah.user?.name || 'Anonim'}
-                </div>
-                <div>
-                  {new Date(tausiyah.waktu).toLocaleString('id-ID', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </div>
+            <div className="prose prose-invert max-w-none text-white text-lg leading-relaxed whitespace-pre-wrap text-justify">
+                {tausiyah.isi}
+            </div>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center text-sm text-gray-400 border-t border-gray-700 pt-6 mt-8 gap-2">
+              <div>
+                Oleh: {tausiyah.user?.nama || tausiyah.user?.name || 'Admin'}
+              </div>
+              <div>
+                {new Date(tausiyah.waktu).toLocaleString('id-ID', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Add Edit Modal */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="bg-black border-white/10">
-          <DialogHeader>
-            <DialogTitle className="text-white">Edit Tausiyah</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <label htmlFor="judul" className="text-white">Judul</label>
-              <Input
-                id="judul"
-                value={editForm.judul}
-                onChange={(e) => setEditForm({ ...editForm, judul: e.target.value })}
-                className="bg-black border-white/10 text-white"
-              />
-            </div>
-            <div className="grid gap-2">
-              <label htmlFor="isi" className="text-white">Isi</label>
-              <textarea
-                id="isi"
-                value={editForm.isi}
-                onChange={(e) => setEditForm({ ...editForm, isi: e.target.value })}
-                className="min-h-[200px] p-3 rounded-md bg-black border border-white/10 text-white"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              onClick={() => setIsEditModalOpen(false)}
-              variant="outline"
-              className="text-white border-white/10"
-            >
-              Batal
-            </Button>
-            <Button
-              onClick={handleEditSubmit}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white"
-            >
-              Simpan
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

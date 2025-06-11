@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import api, { setAuthToken } from '@/utils/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +24,49 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+interface User {
+  id: number;
+  nama: string;
+  email: string;
+  role: string;
+}
+
+interface Keuangan {
+  id: number;
+  tanggal: string;
+  tipe_keuangan_id: 1 | 2;
+  jumlah: string;
+  keterangan?: string;
+  user?: { name: string };
+  metode_pembayaran?: string;
+}
+
+interface Donasi {
+    id: number;
+    tanggal: string;
+    jumlah: string;
+    metode_pembayaran: string;
+}
+
+interface Kegiatan {
+    id: number;
+    nama_kegiatan: string;
+    tanggal: string;
+    waktu: string;
+    lokasi?: string;
+    deskripsi?: string;
+}
+
+interface PrayerTimes {
+    Imsak: string;
+    Fajr: string;
+    Dhuhr: string;
+    Asr: string;
+    Maghrib: string;
+    Isha: string;
+    [key: string]: string; 
+}
 
 const images = [
   '/images/masjid4.jpg',
@@ -55,26 +98,28 @@ const listItemVariants = {
 
 const Dashboard = () => {
   const [role, setRole] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [currentKegiatanIndex, setCurrentKegiatanIndex] = useState(0);
-  const [keuanganData, setKeuanganData] = useState<any[]>([]);
-  const [donasiData, setDonasiData] = useState<any[]>([]);
-  const [kegiatanData, setKegiatanData] = useState<any[]>([]);
+  
+  const [keuanganData, setKeuanganData] = useState<Keuangan[]>([]);
+  const [donasiData, setDonasiData] = useState<Donasi[]>([]);
+  const [kegiatanData, setKegiatanData] = useState<Kegiatan[]>([]);
+  
   const [totalDonasi, setTotalDonasi] = useState<number>(0);
   const [totalSaldo, setTotalSaldo] = useState<number>(0);
   const [totalKegiatan, setTotalKegiatan] = useState<number>(0);
-  const [donasiChartData, setDonasiChartData] = useState<any[]>([]); // This state is declared but not used for pie chart data. It should be displayDonasiData.
+
   const [keuanganFilter, setKeuanganFilter] = useState('tahun');
   const [donasiFilter, setDonasiFilter] = useState('tahun');
-  const [displayKeuanganData, setDisplayKeuanganData] = useState<any[]>([]);
-  const [displayDonasiData, setDisplayDonasiData] = useState<any[]>([]);
-  const [prayerTimes, setPrayerTimes] = useState<any>(null);
-  const [selectedCity, setSelectedCity] = useState('Malang'); // Default to Malang
-  const [selectedKegiatan, setSelectedKegiatan] = useState<any>(null);
+
+  const [displayKeuanganData, setDisplayKeuanganData] = useState<{ key: string; pemasukan: number; pengeluaran: number; }[]>([]);
+  const [displayDonasiData, setDisplayDonasiData] = useState<{ metode_pembayaran: string; jumlah: number; }[]>([]);
+  
+  const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(null);
+  const [selectedCity, setSelectedCity] = useState('Malang');
+  
+  const [selectedKegiatan, setSelectedKegiatan] = useState<Kegiatan | null>(null);
   const [showKegiatanDialog, setShowKegiatanDialog] = useState(false);
 
   const cities = [
@@ -90,79 +135,7 @@ const Dashboard = () => {
     { name: 'Malang', value: 'Malang' }
   ];
 
-  useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    const userRole = localStorage.getItem('role');
-
-    if (!token || !userRole) {
-      router.push('/login');
-    } else {
-      setAuthToken(token);
-      setRole(userRole);
-      fetchDashboardData();
-      fetchUserData();
-      // Initial fetch prayer times with default city
-      fetchPrayerTimes();
-    }
-  }, [router]);
-
-  useEffect(() => {
-    // Re-fetch prayer times when selectedCity changes
-    fetchPrayerTimes();
-  }, [selectedCity]);
-
-  const fetchDashboardData = async () => {
-    try {
-      const keuanganResponse = await api.get('/keuangan');
-      const keuanganData = keuanganResponse.data;
-      setKeuanganData(keuanganData);
-      calculateTotalSaldo(keuanganData);
-
-      const donasiResponse = await api.get('/donasi');
-      const donasiData = donasiResponse.data;
-      setDonasiData(donasiData);
-      calculateTotalDonasi(donasiData);
-
-      const kegiatanResponse = await api.get('/kegiatan');
-      const kegiatanData = kegiatanResponse.data;
-      setKegiatanData(kegiatanData);
-      setTotalKegiatan(kegiatanData.length);
-    } catch (err: any) {
-      console.error('Dashboard Data Error:', err);
-      setError('Gagal mengambil data dashboard');
-    }
-  };
-
-  const fetchUserData = async () => {
-    try {
-      const response = await api.get('/user');
-      console.log('User data response:', response.data);
-      setUser(response.data);
-    } catch (err) {
-      console.error('Error fetching user data:', err);
-      setError('Gagal mengambil data user');
-    }
-  };
-
-  const fetchPrayerTimes = async () => {
-    try {
-      const response = await fetch(
-        `https://api.aladhan.com/v1/timingsByCity?city=${selectedCity}&country=Indonesia&method=11`
-      );
-
-      const data = await response.json();
-      if (data.code === 200) {
-        setPrayerTimes(data.data.timings);
-      } else {
-        setError('Gagal mengambil jadwal sholat');
-      }
-    } catch (err) {
-      console.error('Error fetching prayer times:', err);
-      setError('Terjadi kesalahan saat mengambil jadwal sholat');
-    }
-  };
-
-  const calculateTotalSaldo = (data: any[]) => {
+  const calculateTotalSaldo = (data: Keuangan[]) => {
     let total = 0;
     data.forEach((item) => {
       if (item.tipe_keuangan_id === 1) {
@@ -174,18 +147,83 @@ const Dashboard = () => {
     setTotalSaldo(total);
   };
 
-  const calculateTotalDonasi = (data: any[]) => {
+  const calculateTotalDonasi = (data: Donasi[]) => {
     const total = data.reduce((sum, item) => sum + parseFloat(item.jumlah), 0);
     setTotalDonasi(total);
   };
+  
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      const keuanganResponse = await api.get('/keuangan');
+      const keuanganData: Keuangan[] = keuanganResponse.data;
+      setKeuanganData(keuanganData);
+      calculateTotalSaldo(keuanganData);
 
-  const processAndFormatKeuanganData = (data: any[], filter: string) => {
+      const donasiResponse = await api.get('/donasi');
+      const donasiData: Donasi[] = donasiResponse.data;
+      setDonasiData(donasiData);
+      calculateTotalDonasi(donasiData);
+
+      const kegiatanResponse = await api.get('/kegiatan');
+      const kegiatanData: Kegiatan[] = kegiatanResponse.data;
+      setKegiatanData(kegiatanData);
+      setTotalKegiatan(kegiatanData.length);
+    } catch (err) {
+      console.error('Dashboard Data Error:', err);
+    }
+  }, []);
+
+  const fetchUserData = useCallback(async () => {
+    try {
+      const response = await api.get('/user');
+      setUser(response.data);
+    } catch (err) {
+      console.error('Error fetching user data:', err);
+    }
+  }, []);
+
+  const fetchPrayerTimes = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `https://api.aladhan.com/v1/timingsByCity?city=${selectedCity}&country=Indonesia&method=11`
+      );
+
+      const data = await response.json();
+      if (data.code === 200) {
+        setPrayerTimes(data.data.timings);
+      } else {
+        console.error('Gagal mengambil jadwal sholat');
+      }
+    } catch (err) {
+      console.error('Error fetching prayer times:', err);
+    }
+  }, [selectedCity]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    const userRole = localStorage.getItem('role');
+
+    if (!token || !userRole) {
+      router.push('/login');
+    } else {
+      setAuthToken(token);
+      setRole(userRole);
+      fetchDashboardData();
+      fetchUserData();
+      fetchPrayerTimes();
+    }
+  }, [router, fetchDashboardData, fetchUserData, fetchPrayerTimes]);
+
+  useEffect(() => {
+    fetchPrayerTimes();
+  }, [fetchPrayerTimes]);
+
+  const processAndFormatKeuanganData = useCallback((data: Keuangan[], filter: string) => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
-    let groupedData: any = {};
-    let dateFormat = '';
-    let sortFunc = (a: any, b: any) => a.key.localeCompare(b.key);
+    const groupedData: { [key: string]: { key: string; pemasukan: number; pengeluaran: number } } = {};
+    let sortFunc = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
 
 
     const filteredData = data.filter(item => {
@@ -217,89 +255,87 @@ const Dashboard = () => {
 
     switch (filter) {
       case 'minggu':
-        dateFormat = 'EEE';
         const dayOrder = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-        sortFunc = (a: any, b: any) => dayOrder.indexOf(a.key) - dayOrder.indexOf(b.key);
+        sortFunc = (a: { key: string }, b: { key: string }) => dayOrder.indexOf(a.key) - dayOrder.indexOf(b.key);
         for(let i = 0; i < 7; i++){
           const date = new Date(now);
           date.setDate(now.getDate() - now.getDay() + i);
           const key = date.toLocaleDateString('id-ID', { weekday: 'short' });
-          groupedData[`${key}`] = { key: key, pemasukan: 0, pengeluaran: 0 };
+          groupedData[key] = { key: key, pemasukan: 0, pengeluaran: 0 };
         }
         filteredData.forEach(item => {
           const date = new Date(item.tanggal);
           const key = date.toLocaleDateString('id-ID', { weekday: 'short' });
-          if (groupedData[`${key}`]) {
+          if (groupedData[key]) {
             if (item.tipe_keuangan_id === 1) {
-              groupedData[`${key}`].pemasukan += parseFloat(item.jumlah);
+              groupedData[key].pemasukan += parseFloat(item.jumlah);
             } else if (item.tipe_keuangan_id === 2) {
-              groupedData[`${key}`].pengeluaran += parseFloat(item.jumlah);
+              groupedData[key].pengeluaran += parseFloat(item.jumlah);
             }
           }
         });
         break;
       case 'bulan':
-        sortFunc = (a: any, b: any) => parseInt(a.key) - parseInt(b.key);
+        sortFunc = (a: { key: string }, b: { key: string }) => parseInt(a.key) - parseInt(b.key);
         const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
         for(let i = 1; i <= daysInMonth; i++){
-          groupedData[`${i}`] = { key: i.toString(), pemasukan: 0, pengeluaran: 0 };
+          groupedData[i.toString()] = { key: i.toString(), pemasukan: 0, pengeluaran: 0 };
         }
         filteredData.forEach(item => {
           const date = new Date(item.tanggal);
           const key = date.getDate().toString();
-          if (groupedData[`${key}`]) {
+          if (groupedData[key]) {
             if (item.tipe_keuangan_id === 1) {
-              groupedData[`${key}`].pemasukan += parseFloat(item.jumlah);
+              groupedData[key].pemasukan += parseFloat(item.jumlah);
             } else if (item.tipe_keuangan_id === 2) {
-              groupedData[`${key}`].pengeluaran += parseFloat(item.jumlah);
+              groupedData[key].pengeluaran += parseFloat(item.jumlah);
             }
           }
         });
         break;
       case 'tahun':
-        sortFunc = (a: any, b: any) => new Date(a.key + ' 1, ' + now.getFullYear()).getMonth() - new Date(b.key + ' 1, ' + now.getFullYear()).getMonth();
-
+        sortFunc = (a: { key: string }, b: { key: string }) => new Date(a.key + ' 1, ' + now.getFullYear()).getMonth() - new Date(b.key + ' 1, ' + now.getFullYear()).getMonth();
         const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
         monthNames.forEach(month => {
-          groupedData[`${month}`] = { key: month, pemasukan: 0, pengeluaran: 0 };
+          groupedData[month] = { key: month, pemasukan: 0, pengeluaran: 0 };
         });
         filteredData.forEach(item => {
           const date = new Date(item.tanggal);
           const key = date.toLocaleDateString('id-ID', { month: 'long' });
-          if (groupedData[`${key}`]) {
+          if (groupedData[key]) {
             if (item.tipe_keuangan_id === 1) {
-              groupedData[`${key}`].pemasukan += parseFloat(item.jumlah);
+              groupedData[key].pemasukan += parseFloat(item.jumlah);
             } else if (item.tipe_keuangan_id === 2) {
-              groupedData[`${key}`].pengeluaran += parseFloat(item.jumlah);
+              groupedData[key].pengeluaran += parseFloat(item.jumlah);
             }
           }
         });
         break;
-      default: // default to month for initial load if no filter is set
+      default:
+        sortFunc = (a: { key: string }, b: { key: string }) => new Date(a.key + ' 1, ' + now.getFullYear()).getMonth() - new Date(b.key + ' 1, ' + now.getFullYear()).getMonth();
         const defaultMonthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
         defaultMonthNames.forEach(month => {
-          groupedData[`${month}`] = { key: month, pemasukan: 0, pengeluaran: 0 };
+          groupedData[month] = { key: month, pemasukan: 0, pengeluaran: 0 };
         });
         filteredData.forEach(item => {
           const date = new Date(item.tanggal);
           const key = date.toLocaleDateString('id-ID', { month: 'long' });
-          if (groupedData[`${key}`]) {
+          if (groupedData[key]) {
             if (item.tipe_keuangan_id === 1) {
-              groupedData[`${key}`].pemasukan += parseFloat(item.jumlah);
+              groupedData[key].pemasukan += parseFloat(item.jumlah);
             } else if (item.tipe_keuangan_id === 2) {
-              groupedData[`${key}`].pengeluaran += parseFloat(item.jumlah);
+              groupedData[key].pengeluaran += parseFloat(item.jumlah);
             }
           }
         });
-        sortFunc = (a: any, b: any) => new Date(a.key + ' 1, ' + now.getFullYear()).getMonth() - new Date(b.key + ' 1, ' + now.getFullYear()).getMonth();
         break;
     }
 
     const formattedData = Object.values(groupedData).sort(sortFunc);
     setDisplayKeuanganData(formattedData);
-  };
+  }, []);
 
-  const processAndFormatDonasiData = (data: any[], filter: string) => {
+  const processAndFormatDonasiData = useCallback((data: Donasi[], filter: string) => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
@@ -322,7 +358,7 @@ const Dashboard = () => {
           const endOfYear = new Date(now.getFullYear(), 11, 31);
           endOfYear.setHours(23, 59, 59, 999);
           return itemDate >= startOfYear && itemDate <= endOfYear;
-        default: // default to month for initial load if no filter is set
+        default:
           const defaultStartOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
           const defaultEndOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
           defaultEndOfMonth.setHours(23, 59, 59, 999);
@@ -330,33 +366,33 @@ const Dashboard = () => {
       }
     });
 
-    const groupedData = filteredData.reduce((acc: any, item: any) => {
+    const groupedData = filteredData.reduce((acc: { [key: string]: { metode_pembayaran: string; jumlah: number } }, item: Donasi) => {
       const method = item.metode_pembayaran;
-      if (!acc[`${method}`]) {
-        acc[`${method}`] = {
+      if (!acc[method]) {
+        acc[method] = {
           metode_pembayaran: method,
           jumlah: 0
         };
       }
-      acc[`${method}`].jumlah += parseFloat(item.jumlah);
+      acc[method].jumlah += parseFloat(item.jumlah);
       return acc;
     }, {});
 
     const chartData = Object.values(groupedData);
     setDisplayDonasiData(chartData);
-  };
+  }, []);
 
   useEffect(() => {
     if (keuanganData.length > 0) {
       processAndFormatKeuanganData(keuanganData, keuanganFilter);
     }
-  }, [keuanganFilter, keuanganData]);
+  }, [keuanganFilter, keuanganData, processAndFormatKeuanganData]);
 
   useEffect(() => {
     if (donasiData.length > 0) {
       processAndFormatDonasiData(donasiData, donasiFilter);
     }
-  }, [donasiFilter, donasiData]);
+  }, [donasiFilter, donasiData, processAndFormatDonasiData]);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -365,30 +401,15 @@ const Dashboard = () => {
 
     return () => clearInterval(intervalId);
   }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('role');
-    router.push('/login');
-  };
-
-  const nextKegiatan = () => {
-    setCurrentKegiatanIndex((prev) => (prev + 1) % kegiatanData.length);
-  };
-
-  const prevKegiatan = () => {
-    setCurrentKegiatanIndex((prev) => (prev - 1 + kegiatanData.length) % kegiatanData.length);
-  };
-
-  const handleKegiatanClick = (kegiatan: any) => {
+  
+  const handleKegiatanClick = (kegiatan: Kegiatan) => {
     setSelectedKegiatan(kegiatan);
     setShowKegiatanDialog(true);
   };
 
   return (
-    <div // Changed from motion.div to div
+    <div
       className="bg-[#1A1614] text-white min-h-screen flex flex-col font-sans antialiased"
-      // Removed initial and animate props
     >
       <Navbar role={role} user={user} />
       <div className="h-20" />
@@ -435,7 +456,7 @@ const Dashboard = () => {
         variants={{
           animate: {
             transition: {
-              staggerChildren: 0.1, // Stagger animation for children cards
+              staggerChildren: 0.1,
             },
           },
         }}
@@ -499,7 +520,7 @@ const Dashboard = () => {
         className="w-full max-w-6xl mx-auto mb-8 "
         initial="initial"
         animate="animate"
-        variants={chartVariants} // Applies to the whole section for a unified entrance
+        variants={chartVariants}
       >
         <div className="grid grid-cols-1 gap-6">
           <Card className="bg-white/5 border-white/10">
@@ -568,7 +589,7 @@ const Dashboard = () => {
                       />
                       <YAxis
                         stroke="#ffffff"
-                        tickFormatter={(value) => `Rp ${value.toLocaleString('id-ID')}`}
+                        tickFormatter={(value) => `Rp ${Number(value).toLocaleString('id-ID')}`}
                         tick={{ fontSize: 11 }}
                         width={120}
                       />
@@ -595,7 +616,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* Grouped for staggered animation */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="bg-white/5 border-white/10">
               <CardHeader>
                 <CardTitle className="text-white">Jadwal Sholat Hari Ini</CardTitle>
@@ -616,23 +637,16 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <motion.div layout className="space-y-3">
-                  {Object.entries(prayerTimes || {}).map(([key, value]) => {
-                    const prayerName = {
-                      Imsak: 'Imsak',
-                      Fajr: 'Subuh',
-                      Dhuhr: 'Dzuhur',
-                      Asr: 'Ashar',
-                      Maghrib: 'Maghrib',
-                      Isha: 'Isya',
-                    }[key];
-                    const prayerIcon = {
-                      Imsak: '⏰',
-                      Fajr: '🌅',
-                      Dhuhr: '☀️',
-                      Asr: '🌤️',
-                      Maghrib: '🌅',
-                      Isha: '🌙',
-                    }[key];
+                  {prayerTimes && Object.entries(prayerTimes).map(([key, value]) => {
+                    const prayerNameMap: { [key: string]: string } = {
+                      Imsak: 'Imsak', Fajr: 'Subuh', Dhuhr: 'Dzuhur', Asr: 'Ashar', Maghrib: 'Maghrib', Isha: 'Isya',
+                    };
+                    const prayerIconMap: { [key: string]: string } = {
+                      Imsak: '⏰', Fajr: '🌅', Dhuhr: '☀️', Asr: '🌤️', Maghrib: '🌅', Isha: '🌙',
+                    };
+
+                    const prayerName = prayerNameMap[key];
+                    const prayerIcon = prayerIconMap[key];
 
                     return prayerName ? (
                       <motion.div
@@ -647,7 +661,7 @@ const Dashboard = () => {
                           <span className="text-xl">{prayerIcon}</span>
                           <span className="text-white">{prayerName}</span>
                         </div>
-                        <span className="text-yellow-400 font-semibold">{value as string}</span>
+                        <span className="text-yellow-400 font-semibold">{value}</span>
                       </motion.div>
                     ) : null;
                   })}
@@ -726,6 +740,14 @@ const Dashboard = () => {
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
+                         <Tooltip
+                            contentStyle={{
+                                backgroundColor: '#2A2A2A',
+                                border: '1px solid #ffffff10',
+                                color: '#ffffff'
+                            }}
+                            formatter={(value: number) => `Rp ${value.toLocaleString('id-ID')}`}
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                   ) : (
@@ -752,7 +774,7 @@ const Dashboard = () => {
                 <AnimatePresence mode="popLayout">
                   {[...keuanganData].reverse().slice(0, 20).map((item, index) => (
                     <motion.div
-                      key={item.id || `keuangan-${index}`} // Use a unique ID if available, fallback to index
+                      key={item.id}
                       className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors"
                       initial={{ opacity: 0, y: -20 }}
                       animate={{ opacity: 1, y: 0, transition: { duration: 0.3, delay: index * 0.05 } }}
@@ -829,7 +851,7 @@ const Dashboard = () => {
                     .slice(0, 5)
                     .map((kegiatan, index) => (
                     <motion.div
-                      key={kegiatan.id || `kegiatan-${index}`}
+                      key={kegiatan.id}
                       className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
                       initial={{ opacity: 0, y: -20 }}
                       animate={{ opacity: 1, y: 0, transition: { duration: 0.3, delay: index * 0.05 } }}

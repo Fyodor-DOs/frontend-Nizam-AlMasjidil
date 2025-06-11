@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api, { setAuthToken } from '@/utils/api';
 import Navbar from '@/components/Navbar';
-import { motion } from 'framer-motion'; // Import motion
+import { motion } from 'framer-motion';
+import Image from 'next/image'; 
 
 interface User {
   id: number;
@@ -71,27 +72,25 @@ const Donasi = () => {
       setTimeout(() => {
         router.push('/dashboard');
       }, 1500);
-    } catch (err: any) {
+    } catch (err: unknown) { 
       console.error('Donasi Error:', err);
-      if (err.response) {
-        setError(err?.response?.data?.message || 'Gagal mengirim donasi');
-      } else if (err.request) {
-        setError('Server tidak merespons.');
+      if (typeof err === 'object' && err !== null && 'response' in err) {
+        const errorResponse = err.response as { data?: { message?: string } };
+        setError(errorResponse.data?.message || 'Gagal mengirim donasi');
       } else {
-        setError('Terjadi kesalahan.');
+        setError('Terjadi kesalahan yang tidak terduga.');
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Framer Motion Variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1, // Stagger animation for children
+        staggerChildren: 0.1,
       },
     },
   };
@@ -124,10 +123,12 @@ const Donasi = () => {
 
       {/* Hero Section */}
       <div className="relative h-96 w-full flex items-center justify-center overflow-hidden">
-        <img
+        <Image
           src="/images/masjid7.jpg"
           alt="Masjid"
-          className="absolute inset-0 w-full h-full object-cover opacity-50"
+          fill
+          priority
+          className="object-cover opacity-50"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#1A1614] via-[#1A1614]/50 to-transparent"></div>
         <motion.div
@@ -159,7 +160,7 @@ const Donasi = () => {
           variants={sectionVariants}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }} // Animate when 30% of the element is in view
+          viewport={{ once: true, amount: 0.3 }}
         >
           <motion.h2 className="text-4xl font-bold mb-6 text-yellow-400" variants={itemVariants}>
             Dampak Positif Donasi Anda
@@ -177,7 +178,6 @@ const Donasi = () => {
             Jadikan donasi Anda sebagai investasi terbaik untuk akhirat.
           </motion.p>
 
-          {/* Tombol Kembali ke Beranda */}
           <motion.button
             onClick={() => router.push('/dashboard')}
             className="bg-yellow-400 text-black font-semibold py-3 px-6 rounded-full hover:bg-yellow-500 transition-colors duration-200 shadow-md hover:shadow-lg"
@@ -207,7 +207,7 @@ const Donasi = () => {
                 variants={messageVariants}
                 initial="hidden"
                 animate="visible"
-                exit="exit" // Use AnimatePresence if you want proper exit animations when component unmounts
+                exit="exit"
               >
                 {error}
               </motion.div>

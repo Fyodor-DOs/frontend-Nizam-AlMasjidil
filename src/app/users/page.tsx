@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import api, { setAuthToken } from '@/utils/api';
 import Navbar from '@/components/Navbar';
@@ -12,9 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from 'framer-motion'; // Import motion and AnimatePresence
-import { UserPlus } from 'lucide-react'; // Import ikon UserPlus
+import { motion, AnimatePresence } from 'framer-motion';
+import { UserPlus } from 'lucide-react';
+import Image from 'next/image';
 
 interface User {
   id: number;
@@ -37,15 +37,9 @@ const UserManagementPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  // --- Framer Motion Variants (Disamakan dengan halaman donasi) ---
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1, // Stagger animation for children
-      },
-    },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
   };
 
   const itemVariants = {
@@ -58,7 +52,7 @@ const UserManagementPage = () => {
     visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: 'easeOut' } },
   };
 
-  const cardVariants = { // Menggunakan nama 'cardVariants' agar lebih jelas, untuk list user
+  const cardVariants = {
     hidden: { opacity: 0, scale: 0.95 },
     visible: { opacity: 1, scale: 1, transition: { duration: 0.7, ease: 'easeOut' } },
   };
@@ -81,7 +75,27 @@ const UserManagementPage = () => {
     exit: { opacity: 0, scale: 0.8, y: -50, transition: { duration: 0.3 } },
   };
 
-  // --- End Framer Motion Variants ---
+  const fetchUsers = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await api.get('/users');
+      setUsers(response.data);
+    } catch (err: unknown) {
+      console.error('Error fetching user data:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+  
+  const fetchUserData = useCallback(async () => {
+    try {
+      const response = await api.get('/user');
+      setLoggedInUser(response.data);
+    } catch (err: unknown) {
+      console.error('Error fetching user data:', err);
+    }
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
@@ -96,7 +110,7 @@ const UserManagementPage = () => {
     setUserRole(role);
     fetchUserData();
     fetchUsers();
-  }, [router]);
+  }, [router, fetchUserData, fetchUsers]);
 
   useEffect(() => {
     if (showModal || showDeleteDialog) {
@@ -109,28 +123,6 @@ const UserManagementPage = () => {
       document.body.style.overflow = 'unset';
     };
   }, [showModal, showDeleteDialog]);
-
-  const fetchUserData = async () => {
-    try {
-      const response = await api.get('/user');
-      setLoggedInUser(response.data);
-    } catch (err) {
-      console.error('Error fetching user data:', err);
-    }
-  };
-
-  const fetchUsers = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const response = await api.get('/users');
-      setUsers(response.data);
-    } catch (err) {
-      setError('Gagal mengambil data user');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleDelete = async (id: number) => {
     try {
@@ -147,8 +139,13 @@ const UserManagementPage = () => {
         router.push('/login');
       }
 
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal menghapus user');
+    } catch (err: unknown) {
+        if (typeof err === 'object' && err !== null && 'response' in err) {
+            const errorResponse = err.response as { data?: { message?: string } };
+            setError(errorResponse.data?.message || 'Gagal menghapus user');
+        } else {
+            setError('Gagal menghapus user');
+        }
     } finally {
       setIsLoading(false);
     }
@@ -179,8 +176,13 @@ const UserManagementPage = () => {
       setNama('');
       setEmail('');
       setPassword('');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal menambah user');
+    } catch (err: unknown) {
+        if (typeof err === 'object' && err !== null && 'response' in err) {
+            const errorResponse = err.response as { data?: { message?: string } };
+            setError(errorResponse.data?.message || 'Gagal menambah user');
+        } else {
+            setError('Gagal menambah user');
+        }
     } finally {
       setIsLoading(false);
     }
@@ -190,44 +192,43 @@ const UserManagementPage = () => {
     <div className="min-h-screen bg-[#1A1614] text-white">
       <Navbar role={userRole} user={loggedInUser} />
 
-      {/* Hero Section */}
       <div className="relative h-96 w-full flex items-center justify-center overflow-hidden">
-        <img
+        <Image
           src="/images/masjid7.jpg"
           alt="Masjid"
-          className="absolute inset-0 w-full h-full object-cover opacity-50"
+          fill
+          priority
+          className="object-cover opacity-50"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#1A1614] via-[#1A1614]/50 to-transparent"></div>
         <motion.div
           className="relative z-10 text-center p-4"
-          variants={containerVariants} // Menggunakan containerVariants
+          variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
           <motion.h1
             className="text-5xl md:text-6xl font-extrabold leading-tight text-white drop-shadow-lg"
-            variants={itemVariants} // Menggunakan itemVariants
+            variants={itemVariants}
           >
             Manajemen User
           </motion.h1>
           <motion.p
             className="mt-4 text-xl md:text-2xl font-light text-gray-200"
-            variants={itemVariants} // Menggunakan itemVariants
+            variants={itemVariants}
           >
             Kelola akses pengguna sistem masjid Anda.
           </motion.p>
         </motion.div>
       </div>
 
-      {/* Main Content - Description and User List */}
       <div className="container mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
-        {/* Description Section */}
         <motion.div
           className="text-center md:text-left"
-          variants={sectionVariants} // Menggunakan sectionVariants
+          variants={sectionVariants}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }} // Animate when 30% of the element is in view
+          viewport={{ once: true, amount: 0.3 }}
         >
           <motion.h2 className="text-4xl font-bold mb-6 text-yellow-400" variants={itemVariants}>
             Pengelolaan Akun Pengguna
@@ -243,22 +244,20 @@ const UserManagementPage = () => {
           <motion.p className="text-xl leading-relaxed font-semibold text-yellow-300 mb-6" variants={itemVariants}>
             Pastikan hanya user yang berwenang yang memiliki akses ke sistem ini.
           </motion.p>
-          {/* "Kembali ke Dashboard" Button */}
           <motion.button
             onClick={() => router.push('/dashboard')}
             className="mt-8 bg-yellow-400 text-black font-semibold py-3 px-6 rounded-full hover:bg-yellow-500 transition-colors duration-200 shadow-md hover:shadow-lg inline-flex items-center justify-center gap-2"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            variants={itemVariants} // Menggunakan itemVariants
+            variants={itemVariants}
           >
             Kembali ke Beranda
           </motion.button>
         </motion.div>
 
-        {/* User List Section (resembling donation form card) */}
         <motion.div
           className="bg-black rounded-2xl shadow-2xl overflow-hidden"
-          variants={cardVariants} // Menggunakan cardVariants
+          variants={cardVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
@@ -268,11 +267,11 @@ const UserManagementPage = () => {
           </div>
 
           <div className="p-8">
-            <AnimatePresence> {/* Tambahkan AnimatePresence untuk animasi exit pesan */}
+            <AnimatePresence>
               {error && (
                 <motion.div
                   className="mb-6 p-4 bg-red-600/20 border border-red-500 rounded-lg text-red-400 text-center text-sm"
-                  variants={messageVariants} // Menggunakan messageVariants
+                  variants={messageVariants}
                   initial="hidden"
                   animate="visible"
                   exit="exit"
@@ -310,7 +309,7 @@ const UserManagementPage = () => {
                   </thead>
                   <motion.tbody
                     className="divide-y divide-gray-800"
-                    variants={containerVariants} // Menggunakan containerVariants
+                    variants={containerVariants}
                     initial="hidden"
                     animate="visible"
                   >
@@ -318,7 +317,7 @@ const UserManagementPage = () => {
                       <motion.tr
                         key={userItem.id}
                         className="hover:bg-[#2a2421] transition-colors duration-150"
-                        variants={itemVariants} // Menggunakan itemVariants
+                        variants={itemVariants}
                       >
                         <td className="px-4 py-4 text-gray-300 text-sm">{userItem.id}</td>
                         <td className="px-4 py-4">
@@ -351,7 +350,6 @@ const UserManagementPage = () => {
         </motion.div>
       </div>
 
-      {/* Floating Action Button for 'Tambah User' */}
       <motion.button
         onClick={() => {
           setShowModal(true);
@@ -370,7 +368,6 @@ const UserManagementPage = () => {
         <span className="sr-only">Tambah User</span>
       </motion.button>
 
-      {/* Modal Tambah User */}
       <AnimatePresence>
         {showModal && (
           <motion.div
@@ -382,17 +379,17 @@ const UserManagementPage = () => {
           >
             <motion.div
               className="border border-gray-700 bg-[#1A1614] p-8 rounded-lg shadow-2xl w-full max-w-md text-white"
-              variants={modalDialogVariants} // Menggunakan modalDialogVariants
+              variants={modalDialogVariants}
               initial="hidden"
               animate="visible"
               exit="exit"
             >
               <h2 className="text-3xl font-bold mb-6 text-center text-yellow-400">Tambah User Baru</h2>
-              <AnimatePresence> {/* Tambahkan AnimatePresence untuk animasi exit pesan */}
+              <AnimatePresence>
                 {error && (
                   <motion.div
                     className="mb-6 p-4 bg-red-600/20 border border-red-500 rounded-lg text-red-400 text-center text-sm"
-                    variants={messageVariants} // Menggunakan messageVariants
+                    variants={messageVariants}
                     initial="hidden"
                     animate="visible"
                     exit="exit"
@@ -402,60 +399,24 @@ const UserManagementPage = () => {
                 )}
               </AnimatePresence>
               <div className="space-y-5">
-                <motion.div variants={itemVariants}> {/* Tambahkan motion.div dan variants */}
+                <motion.div variants={itemVariants}>
                   <label htmlFor="nama" className="block mb-2 font-semibold text-gray-300">Nama</label>
-                  <input
-                    id="nama"
-                    type="text"
-                    placeholder="Nama Lengkap"
-                    value={nama}
-                    onChange={(e) => setNama(e.target.value)}
-                    className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 text-lg"
-                    required
-                  />
+                  <input id="nama" type="text" placeholder="Nama Lengkap" value={nama} onChange={(e) => setNama(e.target.value)} className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 text-lg" required />
                 </motion.div>
-                <motion.div variants={itemVariants}> {/* Tambahkan motion.div dan variants */}
+                <motion.div variants={itemVariants}>
                   <label htmlFor="email" className="block mb-2 font-semibold text-gray-300">Email</label>
-                  <input
-                    id="email"
-                    type="email"
-                    placeholder="email@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 text-lg"
-                    required
-                  />
+                  <input id="email" type="email" placeholder="email@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 text-lg" required />
                 </motion.div>
-                <motion.div variants={itemVariants}> {/* Tambahkan motion.div dan variants */}
+                <motion.div variants={itemVariants}>
                   <label htmlFor="password" className="block mb-2 font-semibold text-gray-300">Password</label>
-                  <input
-                    id="password"
-                    type="password"
-                    placeholder="Minimal 6 karakter"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 text-lg"
-                    required
-                  />
+                  <input id="password" type="password" placeholder="Minimal 6 karakter" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-4 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 text-lg" required />
                 </motion.div>
               </div>
               <div className="flex justify-end space-x-4 mt-8">
-                <motion.button
-                  onClick={() => setShowModal(false)}
-                  className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200"
-                  disabled={isLoading}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
+                <motion.button onClick={() => setShowModal(false)} className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200" disabled={isLoading} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} >
                   Batal
                 </motion.button>
-                <motion.button
-                  onClick={handleCreate}
-                  className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2"
-                  disabled={isLoading}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
+                <motion.button onClick={handleCreate} className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2" disabled={isLoading} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} >
                   {isLoading ? (
                     <>
                       <svg className="animate-spin h-5 w-5 text-gray-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -464,9 +425,7 @@ const UserManagementPage = () => {
                       </svg>
                       <span>Menyimpan...</span>
                     </>
-                  ) : (
-                    'Buat User'
-                  )}
+                  ) : ('Buat User')}
                 </motion.button>
               </div>
             </motion.div>
@@ -474,8 +433,7 @@ const UserManagementPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Delete Confirmation Dialog */}
-      <AnimatePresence> {/* Tambahkan AnimatePresence untuk animasi exit dialog */}
+      <AnimatePresence>
         {showDeleteDialog && (
           <motion.div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
@@ -484,46 +442,25 @@ const UserManagementPage = () => {
             animate="visible"
             exit="exit"
           >
-            {/* DialogContent dari Shadcn/UI perlu dibungkus motion.div secara terpisah
-                atau pastikan komponen DialogContent itu sendiri mendukung Framer Motion.
-                Untuk menyamakan, saya membungkus kontennya dengan motion.div. */}
             <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
               <DialogContent className="bg-[#1A1614] border-gray-700 text-white shadow-xl p-8 rounded-lg max-w-md">
                 <motion.div
-                  variants={modalDialogVariants} // Menggunakan modalDialogVariants
+                  variants={modalDialogVariants}
                   initial="hidden"
                   animate="visible"
                   exit="exit"
-                  // Pastikan ini diletakkan di dalam DialogContent jika DialogContent tidak bisa langsung di-motion
-                  // atau pastikan DialogContent mem-forward ref agar bisa di-motion
-                  // Untuk kasus ini, karena DialogContent dari shadcn, membungkus isinya adalah cara paling aman
                 >
                   <DialogHeader className="text-center">
                     <DialogTitle className="text-3xl font-bold text-yellow-400 mb-2">Konfirmasi Hapus User</DialogTitle>
                     <DialogDescription className="text-gray-300 text-lg">
-                      Apakah Anda yakin ingin menghapus user **"{userToDelete?.nama}"**? Tindakan ini tidak dapat dibatalkan.
+                      Apakah Anda yakin ingin menghapus user &quot;{userToDelete?.nama}&quot;? Tindakan ini tidak dapat dibatalkan.
                     </DialogDescription>
                   </DialogHeader>
                   <DialogFooter className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
-                    <motion.button
-                      onClick={() => {
-                        setShowDeleteDialog(false);
-                        setUserToDelete(null);
-                      }}
-                      className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full sm:w-auto"
-                      disabled={isLoading}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
+                    <motion.button onClick={() => { setShowDeleteDialog(false); setUserToDelete(null); }} className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full sm:w-auto" disabled={isLoading} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} >
                       Batal
                     </motion.button>
-                    <motion.button
-                      onClick={() => userToDelete && handleDelete(userToDelete.id)}
-                      className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto"
-                      disabled={isLoading}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
+                    <motion.button onClick={() => userToDelete && handleDelete(userToDelete.id)} className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto" disabled={isLoading} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} >
                       {isLoading ? (
                         <>
                           <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -532,9 +469,7 @@ const UserManagementPage = () => {
                           </svg>
                           <span>Menghapus...</span>
                         </>
-                      ) : (
-                        'Hapus'
-                      )}
+                      ) : ('Hapus')}
                     </motion.button>
                   </DialogFooter>
                 </motion.div>

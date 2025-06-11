@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import api, { setAuthToken } from '@/utils/api';
 import Navbar from '@/components/Navbar';
@@ -12,11 +12,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button"; // Import Button dari shadcn/ui
+import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlusCircle } from 'lucide-react';
+import Image from 'next/image'; 
 
-// Membuat komponen MotionButton yang merupakan Button dari shadcn/ui yang dianimasikan oleh Framer Motion
 const MotionButton = motion(Button);
 
 type Tausiyah = {
@@ -37,13 +37,12 @@ interface User {
   role: string;
 }
 
-// --- Framer Motion Variants (Disamakan dengan halaman Donasi & User Management) ---
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1, // Stagger animation for children
+      staggerChildren: 0.1,
     },
   },
 };
@@ -58,7 +57,7 @@ const sectionVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: 'easeOut' } },
 };
 
-const cardVariants = { // Untuk card seperti daftar tausiyah
+const cardVariants = {
   hidden: { opacity: 0, scale: 0.95 },
   visible: { opacity: 1, scale: 1, transition: { duration: 0.7, ease: 'easeOut' } },
 };
@@ -69,23 +68,16 @@ const messageVariants = {
   exit: { opacity: 0, y: 20, transition: { duration: 0.3 } },
 };
 
-const modalOverlayVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 0.3 } },
-  exit: { opacity: 0, transition: { duration: 0.3 } },
-};
-
 const modalDialogVariants = {
   hidden: { opacity: 0, scale: 0.8, y: -50 },
   visible: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 200, damping: 25 } },
   exit: { opacity: 0, scale: 0.8, y: -50, transition: { duration: 0.3 } },
 };
 
-// Animasi untuk hover dan tap pada tombol (sudah ada, disesuaikan)
 const buttonHoverTap = {
   whileHover: {
     scale: 1.05,
-    boxShadow: "0px 8px 20px rgba(252, 211, 77, 0.4)", // Yellow shadow on hover
+    boxShadow: "0px 8px 20px rgba(252, 211, 77, 0.4)",
     transition: { type: "spring", stiffness: 400, damping: 10 }
   },
   whileTap: {
@@ -93,7 +85,6 @@ const buttonHoverTap = {
     transition: { type: "spring", stiffness: 400, damping: 10 }
   },
 };
-// --- End Framer Motion Variants ---
 
 const TausiyahPage = () => {
   const router = useRouter();
@@ -108,10 +99,6 @@ const TausiyahPage = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [tausiyahToDelete, setTausiyahToDelete] = useState<Tausiyah | null>(null);
 
-  const getCurrentDateTime = () => {
-    return new Date().toISOString().slice(0, 16);
-  };
-
   useEffect(() => {
     if (showModal || showDeleteDialog) {
       document.body.style.overflow = 'hidden';
@@ -124,6 +111,33 @@ const TausiyahPage = () => {
     };
   }, [showModal, showDeleteDialog]);
 
+  const fetchTausiyah = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const res = await api.get('/tausiyah');
+      setTausiyahList(res.data);
+    } catch (e: unknown) {
+      console.error('Fetch Tausiyah Error:', e);
+      if (e instanceof Error) {
+          setError(e.message);
+      } else {
+          setError('Gagal mengambil tausiyah. Silakan coba lagi nanti.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const fetchUser = useCallback(async () => {
+    try {
+      const res = await api.get('/user');
+      setUser(res.data);
+    } catch (e) {
+      console.error('Error fetching user:', e);
+    }
+  }, []);
+
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     const role = localStorage.getItem('role');
@@ -133,30 +147,7 @@ const TausiyahPage = () => {
       fetchUser();
     }
     fetchTausiyah();
-  }, [router]);
-
-  const fetchUser = async () => {
-    try {
-      const res = await api.get('/user');
-      setUser(res.data);
-    } catch (e) {
-      console.error('Error fetching user:', e);
-    }
-  };
-
-  const fetchTausiyah = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const res = await api.get('/tausiyah');
-      setTausiyahList(res.data);
-    } catch (e: any) {
-      console.error('Fetch Tausiyah Error:', e);
-      setError(e.message || 'Gagal mengambil tausiyah. Silakan coba lagi nanti.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [fetchTausiyah, fetchUser]);
 
   const handleSave = async () => {
     if (userRole !== 'admin') {
@@ -188,9 +179,16 @@ const TausiyahPage = () => {
       setEditMode(false);
       setFormData({ id: 0, judul: '', isi: '' });
       await fetchTausiyah();
-    } catch (e: any) {
+    } catch (e: unknown) { 
       console.error('Error during save/update:', e);
-      setError(e.response?.data?.message || e.message || 'Terjadi kesalahan saat menyimpan tausiyah.');
+      if (typeof e === 'object' && e !== null && 'response' in e) {
+          const response = e.response as { data?: { message?: string } };
+          setError(response.data?.message || 'Terjadi kesalahan saat menyimpan tausiyah.');
+      } else if (e instanceof Error) {
+          setError(e.message);
+      } else {
+          setError('Terjadi kesalahan yang tidak terduga.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -214,9 +212,16 @@ const TausiyahPage = () => {
       setShowDeleteDialog(false);
       setTausiyahToDelete(null);
       await fetchTausiyah();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Gagal menghapus tausiyah:', e);
-      setError(e.response?.data?.message || e.message || 'Gagal menghapus tausiyah. Terjadi kesalahan server.');
+      if (typeof e === 'object' && e !== null && 'response' in e) {
+          const response = e.response as { data?: { message?: string } };
+          setError(response.data?.message || 'Gagal menghapus tausiyah.');
+      } else if (e instanceof Error) {
+          setError(e.message);
+      } else {
+          setError('Gagal menghapus tausiyah. Terjadi kesalahan server.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -226,12 +231,13 @@ const TausiyahPage = () => {
     <div className="min-h-screen bg-[#1A1614] text-white">
       <Navbar role={userRole} user={user} />
 
-      {/* Hero Section */}
       <div className="relative h-96 w-full flex items-center justify-center overflow-hidden">
-        <img
+        <Image
           src="/images/masjid7.jpg"
           alt="Masjid"
-          className="absolute inset-0 w-full h-full object-cover opacity-50"
+          fill
+          priority
+          className="object-cover opacity-50"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#1A1614] via-[#1A1614]/50 to-transparent"></div>
         <motion.div
@@ -240,24 +246,16 @@ const TausiyahPage = () => {
           initial="hidden"
           animate="visible"
         >
-          <motion.h1
-            className="text-5xl md:text-6xl font-extrabold leading-tight text-white drop-shadow-lg"
-            variants={itemVariants}
-          >
+          <motion.h1 className="text-5xl md:text-6xl font-extrabold leading-tight text-white drop-shadow-lg" variants={itemVariants} >
             Kumpulan Tausiyah
           </motion.h1>
-          <motion.p
-            className="mt-4 text-xl md:text-2xl font-light text-gray-200"
-            variants={itemVariants}
-          >
+          <motion.p className="mt-4 text-xl md:text-2xl font-light text-gray-200" variants={itemVariants} >
             Nasihat dan pencerahan hati dari para ulama dan asatidz.
           </motion.p>
         </motion.div>
       </div>
 
-      {/* Main Content */}
       <main className="container mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-2 gap-12 items-start flex-grow relative">
-        {/* Description Section */}
         <motion.div
           className="text-center md:text-left"
           variants={sectionVariants}
@@ -286,11 +284,7 @@ const TausiyahPage = () => {
           <motion.p className="text-xl leading-relaxed font-semibold text-yellow-300 mb-8" variants={itemVariants}>
             Mari kita jadikan setiap bacaan sebagai langkah mendekatkan diri kepada-Nya.
           </motion.p>
-          {/* "Kembali ke Beranda" Button */}
-          <motion.div
-            className="mt-8 flex justify-center md:justify-start"
-            variants={itemVariants}
-          >
+          <motion.div className="mt-8 flex justify-center md:justify-start" variants={itemVariants} >
             <motion.button
               onClick={() => router.push('/dashboard')}
               className="bg-yellow-400 text-black font-semibold py-3 px-6 rounded-full hover:bg-yellow-500 transition-colors duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
@@ -301,7 +295,6 @@ const TausiyahPage = () => {
           </motion.div>
         </motion.div>
 
-        {/* Tausiyah List Section (Card) */}
         <motion.div
           className="bg-black rounded-2xl shadow-2xl overflow-hidden border border-gray-800"
           variants={cardVariants}
@@ -359,8 +352,7 @@ const TausiyahPage = () => {
                     onClick={() => router.push(`/tausiyah/${item.id}`)}
                     className="flex flex-col p-6 border border-gray-700 rounded-xl shadow-lg bg-[#1A1614] text-white cursor-pointer hover:bg-[#2a2421] transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-2xl"
                     variants={itemVariants}
-                    whileHover={buttonHoverTap.whileHover}
-                    whileTap={buttonHoverTap.whileTap}
+                    {...buttonHoverTap}
                   >
                     <h2 className="text-2xl font-bold text-yellow-400 mb-3 leading-tight">{item.judul}</h2>
                     <p className="text-gray-300 mb-4 line-clamp-3 leading-relaxed">{item.isi}</p>
@@ -380,7 +372,6 @@ const TausiyahPage = () => {
                     </div>
                     {userRole === 'admin' && (
                       <div className="mt-5 flex gap-3" onClick={(e) => e.stopPropagation()}>
-                        {/* Menggunakan MotionButton untuk edit */}
                         <MotionButton
                           onClick={() => {
                             setFormData({
@@ -398,7 +389,6 @@ const TausiyahPage = () => {
                         >
                           Edit
                         </MotionButton>
-                        {/* Menggunakan MotionButton untuk delete */}
                         <MotionButton
                           onClick={() => handleDeleteClick(item)}
                           className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-semibold transition-colors duration-200 flex-1"
@@ -417,7 +407,6 @@ const TausiyahPage = () => {
         </motion.div>
       </main>
 
-      {/* Floating Action Button for 'Tambah Tausiyah' */}
       {userRole === 'admin' && (
         <motion.button
           onClick={() => {
@@ -438,7 +427,6 @@ const TausiyahPage = () => {
         </motion.button>
       )}
 
-      {/* Create/Edit Modal */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
         <DialogContent className="bg-[#1A1614] border-gray-700 text-white shadow-xl p-8 rounded-xl max-w-lg max-h-[90vh] overflow-y-auto">
           <motion.div
@@ -522,8 +510,7 @@ const TausiyahPage = () => {
                   variant="outline"
                   className="px-7 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full sm:w-auto"
                   disabled={isLoading}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  {...buttonHoverTap}
                 >
                   Batal
                 </MotionButton>
@@ -532,8 +519,7 @@ const TausiyahPage = () => {
                   variant="default"
                   className="px-7 py-3 bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto"
                   disabled={isLoading}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  {...buttonHoverTap}
                 >
                   {isLoading ? (
                     <>
@@ -553,7 +539,6 @@ const TausiyahPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent className="bg-[#1A1614] border-gray-700 text-white shadow-xl p-8 rounded-xl max-w-md max-h-[90vh] overflow-y-auto">
           <motion.div
@@ -576,8 +561,7 @@ const TausiyahPage = () => {
                 onClick={() => setShowDeleteDialog(false)}
                 className="px-7 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg font-semibold transition-colors duration-200 w-full sm:w-auto"
                 disabled={isLoading}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                {...buttonHoverTap}
               >
                 Batal
               </MotionButton>
@@ -586,8 +570,7 @@ const TausiyahPage = () => {
                 onClick={handleDeleteConfirm}
                 className="px-7 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md text-lg font-semibold disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto"
                 disabled={isLoading}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                {...buttonHoverTap}
               >
                 {isLoading ? (
                   <>

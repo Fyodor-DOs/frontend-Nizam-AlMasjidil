@@ -6,8 +6,21 @@ import autoTable from 'jspdf-autotable';
 import { useRouter } from 'next/navigation';
 import api, { setAuthToken } from '@/utils/api';
 
+interface LaporanItem {
+  tanggal: string;
+  keterangan: string;
+  tipe_keuangan_id: 1 | 2; 
+  jumlah: string | number;
+}
+
+interface jsPDFWithPlugin extends jsPDF {
+  lastAutoTable: {
+    finalY: number;
+  };
+}
+
 const LaporanPage = () => {
-  const [laporan, setLaporan] = useState<any[]>([]);
+  const [laporan, setLaporan] = useState<LaporanItem[]>([]);
   const [bulan, setBulan] = useState('');
   const [tahun, setTahun] = useState('');
   const [saldoAkhir, setSaldoAkhir] = useState(0);
@@ -32,7 +45,7 @@ const LaporanPage = () => {
       const data = response.data.data;
       setLaporan(data);
       setSaldoAkhir(response.data.saldo_akhir);
-    } catch (err) {
+    } catch (err: unknown) { 
       console.error('Error fetching laporan:', err);
       alert('Gagal mengambil data laporan');
     }
@@ -60,19 +73,25 @@ const LaporanPage = () => {
     
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text(`LAPORAN KEUANGAN BULAN ${getNamaBulan(bulan)} ${tahun}`, 105, 55, { align: 'center' });
+    doc.text(`LAPORAN KEUANGAN BULAN ${getNamaBulan(bulan).toUpperCase()} ${tahun}`, 105, 55, { align: 'center' });
     
     doc.setLineWidth(0.5);
     doc.line(20, 60, 190, 60);
     
-    const tableData = laporan.map((item) => [
+    const tableData = laporan.map((item: LaporanItem) => [
       new Date(item.tanggal).toLocaleDateString('id-ID'),
       item.keterangan,
-      item.tipe_keuangan_id === 1 ? `Rp ${parseFloat(item.jumlah).toLocaleString('id-ID')}` : '',
-      item.tipe_keuangan_id === 2 ? `Rp ${parseFloat(item.jumlah).toLocaleString('id-ID')}` : '',
+      item.tipe_keuangan_id === 1 ? `Rp ${parseFloat(String(item.jumlah)).toLocaleString('id-ID')}` : '',
+      item.tipe_keuangan_id === 2 ? `Rp ${parseFloat(String(item.jumlah)).toLocaleString('id-ID')}` : '',
     ]);
 
-    tableData.push(['', 'Saldo Akhir', '', `Rp ${saldoAkhir.toLocaleString('id-ID')}`]);
+    const totalPemasukan = laporan
+      .filter(item => item.tipe_keuangan_id === 1)
+      .reduce((sum, item) => sum + parseFloat(String(item.jumlah)), 0);
+
+    const totalPengeluaran = laporan
+      .filter(item => item.tipe_keuangan_id === 2)
+      .reduce((sum, item) => sum + parseFloat(String(item.jumlah)), 0);
 
     autoTable(doc, {
       head: [['Tanggal', 'Keterangan', 'Uang Masuk', 'Uang Keluar']],
@@ -81,7 +100,7 @@ const LaporanPage = () => {
       margin: { top: 70 },
       styles: {
         fontSize: 10,
-        cellPadding: 5,
+        cellPadding: 3,
       },
       headStyles: {
         fillColor: [41, 128, 185],
@@ -90,8 +109,39 @@ const LaporanPage = () => {
       },
       alternateRowStyles: {
         fillColor: [245, 245, 245],
+        textColor: 0
       },
+      didDrawPage: (data) => {
+        const pageCount = doc.getNumberOfPages();
+        doc.setFontSize(10);
+        doc.text(
+          `Halaman ${data.pageNumber} dari ${pageCount}`,
+          data.settings.margin.left,
+          doc.internal.pageSize.height - 10
+        );
+      }
     });
+
+    const finalY = (doc as jsPDFWithPlugin).lastAutoTable.finalY;
+
+    autoTable(doc, {
+      startY: finalY + 10,
+      head: [['Ringkasan', 'Jumlah']],
+      body: [
+          ['Total Pemasukan', `Rp ${totalPemasukan.toLocaleString('id-ID')}`],
+          ['Total Pengeluaran', `Rp ${totalPengeluaran.toLocaleString('id-ID')}`],
+          ['Saldo Akhir', `Rp ${saldoAkhir.toLocaleString('id-ID')}`]
+      ],
+      theme: 'grid',
+      headStyles: {
+          fillColor: [22, 160, 133],
+          fontStyle: 'bold',
+      },
+      bodyStyles: {
+          fontStyle: 'bold'
+      }
+    });
+
 
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
@@ -99,11 +149,6 @@ const LaporanPage = () => {
       doc.setFontSize(10);
       doc.text(
         `Dicetak pada: ${new Date().toLocaleDateString('id-ID')}`,
-        20,
-        doc.internal.pageSize.height - 10
-      );
-      doc.text(
-        `Halaman ${i} dari ${pageCount}`,
         doc.internal.pageSize.width - 20,
         doc.internal.pageSize.height - 10,
         { align: 'right' }
@@ -152,7 +197,7 @@ const LaporanPage = () => {
                 onChange={(e) => setTahun(e.target.value)}
               >
                 <option value="">Pilih Tahun</option>
-                {Array.from({ length: 1 }, (_, i) => {
+                {Array.from({ length: 5 }, (_, i) => { 
                   const year = new Date().getFullYear() - i;
                   return (
                     <option key={year} value={year}>
@@ -190,22 +235,22 @@ const LaporanPage = () => {
               {laporan.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="text-center py-4 text-gray-500 border border-gray-700">
-                    Tidak ada data.
+                    Tidak ada data. Silakan pilih bulan dan tahun lalu klik &quot;Tampilkan Laporan&quot;.
                   </td>
                 </tr>
               ) : (
                 <>
-                  {laporan.map((item, idx) => (
+                  {laporan.map((item: LaporanItem, idx) => (
                     <tr key={idx} className="border border-gray-700">
                       <td className="px-4 py-2 border border-gray-700">
                         {new Date(item.tanggal).toLocaleDateString('id-ID')}
                       </td>
                       <td className="px-4 py-2 border border-gray-700">{item.keterangan}</td>
                       <td className="px-4 py-2 border border-gray-700 text-green-400 font-medium">
-                        {item.tipe_keuangan_id === 1 ? `Rp ${parseFloat(item.jumlah).toLocaleString('id-ID')}` : '-'}
+                        {item.tipe_keuangan_id === 1 ? `Rp ${parseFloat(String(item.jumlah)).toLocaleString('id-ID')}` : '-'}
                       </td>
                       <td className="px-4 py-2 border border-gray-700 text-red-400 font-medium">
-                        {item.tipe_keuangan_id === 2 ? `Rp ${parseFloat(item.jumlah).toLocaleString('id-ID')}` : '-'}
+                        {item.tipe_keuangan_id === 2 ? `Rp ${parseFloat(String(item.jumlah)).toLocaleString('id-ID')}` : '-'}
                       </td>
                     </tr>
                   ))}
@@ -225,20 +270,21 @@ const LaporanPage = () => {
         </div>
 
         <div className="flex justify-between items-center mt-6">
-  <button
-    onClick={() => router.push('/keuangan')}
-    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition"
-  >
-    ← Kembali ke Keuangan
-  </button>
+          <button
+            onClick={() => router.push('/keuangan')}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition"
+          >
+            ← Kembali ke Keuangan
+          </button>
 
-  <button
-    onClick={exportToPDF}
-    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition"
-  >
-    Export PDF
-  </button>
-</div>
+          <button
+            onClick={exportToPDF}
+            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition"
+            disabled={laporan.length === 0}
+          >
+            Export PDF
+          </button>
+        </div>
 
       </div>
     </div>

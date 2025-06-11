@@ -1,7 +1,9 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { User, LogOut, DollarSign, Wallet, Calendar, Users, BookOpen } from 'lucide-react';
 import {
@@ -22,15 +24,21 @@ import {
 } from "@/components/ui/dialog";
 import { setAuthToken } from '@/utils/api';
 
+interface UserProfile {
+  nama: string;
+  email: string;
+  role: string;
+  foto_profil?: string;
+}
+
 interface NavbarProps {
   role: string | null;
-  user: any;
+  user: UserProfile | null;
 }
 
 const Navbar = ({ role, user }: NavbarProps) => {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
@@ -43,10 +51,10 @@ const Navbar = ({ role, user }: NavbarProps) => {
   };
 
   const getButtonClass = (path: string) => {
-    return `flex items-center gap-2 transition-colors duration-200 font-medium ${
+    return `flex items-center gap-2 transition-colors duration-200 font-medium p-2 rounded-md ${
       isActive(path)
-        ? 'text-yellow-400 border-b-2 border-yellow-400'
-        : 'text-gray-300 hover:text-yellow-400'
+        ? 'text-yellow-400 bg-white/10'
+        : 'text-gray-300 hover:text-yellow-400 hover:bg-white/5'
     }`;
   };
 
@@ -54,7 +62,7 @@ const Navbar = ({ role, user }: NavbarProps) => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('role');
     setAuthToken(null);
-    window.location.href = '/login';
+    window.location.href = '/login'; 
   };
 
   if (!isAuthenticated) {
@@ -79,42 +87,27 @@ const Navbar = ({ role, user }: NavbarProps) => {
           </Link>
           <nav className="flex items-center gap-8">
             <div className="hidden md:flex items-center space-x-6">
-              <button 
-                onClick={() => window.location.href = '/donasi'} 
-                className={getButtonClass('/donasi')}
-              >
+              <Link href="/donasi" className={getButtonClass('/donasi')} onClick={() => window.location.href = '/donasi'}>
                 <DollarSign className="h-4 w-4" />
                 <span>Donasi</span>
-              </button>
-              <button 
-                onClick={() => window.location.href = '/keuangan'} 
-                className={getButtonClass('/keuangan')}
-              >
+              </Link>
+              <Link href="/keuangan" className={getButtonClass('/keuangan')} onClick={() => window.location.href = '/keuangan'}>
                 <Wallet className="h-4 w-4" />
                 <span>Keuangan</span>
-              </button>
-              <button 
-                onClick={() => window.location.href = '/kegiatan'} 
-                className={getButtonClass('/kegiatan')}
-              >
+              </Link>
+              <Link href="/kegiatan" className={getButtonClass('/kegiatan')} onClick={() => window.location.href = '/kegiatan'}>
                 <Calendar className="h-4 w-4" />
                 <span>Kegiatan</span>
-              </button>
-              <button 
-                onClick={() => window.location.href = '/tausiyah'} 
-                className={getButtonClass('/tausiyah')}
-              >
+              </Link>
+              <Link href="/tausiyah" className={getButtonClass('/tausiyah')} onClick={() => window.location.href = '/tausiyah'}>
                 <BookOpen className="h-4 w-4" />
                 <span>Tausiyah</span>
-              </button>
+              </Link>
               {role === 'admin' && (
-                <button 
-                  onClick={() => window.location.href = '/users'} 
-                  className={getButtonClass('/users')}
-                >
+                <Link href="/users" className={getButtonClass('/users')} onClick={() => window.location.href = '/users'}>
                   <Users className="h-4 w-4" />
                   <span>Kelola User</span>
-                </button>
+                </Link>
               )}
             </div>
             <DropdownMenu>
@@ -166,7 +159,6 @@ const Navbar = ({ role, user }: NavbarProps) => {
         </div>
       </header>
 
-      {/* Logout Confirmation Dialog */}
       <Dialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
         <DialogContent className="bg-[#1A1614] border-white/10 text-white shadow-xl">
           <DialogHeader>
@@ -200,4 +192,4 @@ const Navbar = ({ role, user }: NavbarProps) => {
   );
 };
 
-export default Navbar; 
+export default Navbar;
